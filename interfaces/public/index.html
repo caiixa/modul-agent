@@ -13,94 +13,133 @@
 }
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:flex}
 /* Sidebar */
-.sidebar{width:240px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0}
-.sidebar-header{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
-.sidebar-header .logo{width:30px;height:30px;border-radius:6px;background:linear-gradient(135deg,#58a6ff,#bc8cff);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff}
-.sidebar-header h1{font-size:14px;font-weight:600}
-.nav-item{display:flex;align-items:center;gap:10px;padding:10px 16px;cursor:pointer;font-size:13px;color:var(--text2);transition:all .1s;border-left:2px solid transparent}
+.sidebar{width:220px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow:hidden}
+.sidebar-header{padding:12px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;flex-shrink:0}
+.sidebar-header .logo{width:28px;height:28px;border-radius:6px;background:linear-gradient(135deg,#58a6ff,#bc8cff);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff}
+.sidebar-header h1{font-size:13px;font-weight:600}
+.nav-section-top{flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0}
+.nav-section-bottom{margin-top:auto;border-top:1px solid var(--border);padding-top:4px;flex-shrink:0}
+.nav-item{display:flex;align-items:center;gap:8px;padding:9px 14px;cursor:pointer;font-size:12px;color:var(--text2);transition:all .1s;border-left:2px solid transparent;flex-shrink:0}
 .nav-item:hover{background:var(--bg3);color:var(--text)}
 .nav-item.active{background:var(--bg3);color:var(--text);border-left-color:var(--accent);font-weight:500}
-.nav-item .badge{margin-left:auto;font-size:10px;padding:1px 6px;border-radius:10px;background:var(--accent);color:#fff;min-width:18px;text-align:center}
+/* Chat sessions inside sidebar */
+.chat-sessions-list{flex:1;overflow-y:auto;padding:2px 0 4px;border-bottom:1px solid var(--border)}
+.chat-sessions-list::-webkit-scrollbar{width:4px}
+.chat-sessions-list::-webkit-scrollbar-track{background:transparent}
+.chat-sessions-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.chat-sessions-header{display:flex;align-items:center;gap:6px;padding:5px 14px 5px 26px;flex-shrink:0;font-size:11px;color:var(--text2);border-bottom:1px solid var(--border)}
+.chat-sessions-header .new-btn{margin-left:auto;cursor:pointer;opacity:.5;font-size:13px}
+.chat-sessions-header .new-btn:hover{opacity:1;color:var(--accent)}
+.chat-session-item{display:flex;align-items:center;gap:6px;padding:7px 14px 7px 26px;cursor:pointer;font-size:12px;color:var(--text2);transition:all .1s;border-left:2px solid transparent}
+.chat-session-item:hover{background:var(--bg3);color:var(--text)}
+.chat-session-item.active{background:var(--bg3);color:var(--text);border-left-color:var(--accent);font-weight:500}
+.chat-session-item .name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chat-session-item .del-btn{opacity:0;font-size:10px;padding:1px 3px;border-radius:3px;cursor:pointer;color:var(--text2);border:none;background:transparent}
+.chat-session-item:hover .del-btn{opacity:1}
+.chat-session-item .del-btn:hover{color:var(--danger);background:rgba(248,81,73,.1)}
 /* Main */
 .main{flex:1;display:flex;flex-direction:column;overflow:hidden}
-.topbar{display:flex;align-items:center;gap:12px;padding:10px 24px;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0}
-.topbar h2{font-size:15px;font-weight:600}
-.topbar .sub{font-size:11px;color:var(--text2);margin-left:8px}
-/* Content */
-.content{flex:1;overflow-y:auto;padding:20px 24px}
-.content::-webkit-scrollbar{width:6px}
-.content::-webkit-scrollbar-track{background:transparent}
-.content::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
-/* Page management */
-.page{display:none}
-.page.active{display:block}
+.topbar{display:none}
+/* Content area - wraps all pages */
+.content-wrap{flex:1;overflow:hidden;position:relative;display:flex;flex-direction:column}
+.page{display:none;height:100%;overflow-y:auto}
+.page.active{display:block;flex:1}
+#pageChat.active{display:flex;flex-direction:column}
 /* Cards */
 .card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:16px}
-.card-header{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.card-header{padding:12px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
 .card-header h3{font-size:13px;font-weight:600}
-.card-body{padding:14px 16px}
+.card-body{padding:12px 14px}
 /* Buttons */
-.btn{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:var(--radius);font-size:12px;cursor:pointer;border:1px solid var(--border);background:var(--bg3);color:var(--text);transition:all .15s}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:var(--radius);font-size:12px;cursor:pointer;border:1px solid var(--border);background:var(--bg3);color:var(--text);transition:all .15s}
 .btn:hover{border-color:var(--accent);color:var(--accent)}
 .btn-primary{background:var(--accent);color:#fff;border-color:var(--accent)}
 .btn-primary:hover{opacity:.85;color:#fff}
 .btn-danger{color:var(--danger);border-color:var(--danger)}
 .btn-danger:hover{background:rgba(248,81,73,.1)}
-.btn-sm{padding:3px 10px;font-size:11px}
+.btn-sm{padding:2px 8px;font-size:11px}
 /* Table */
 table{width:100%;border-collapse:collapse;font-size:13px}
-th{padding:8px 12px;text-align:left;color:var(--text2);font-weight:500;border-bottom:1px solid var(--border);font-size:11px;text-transform:uppercase}
-td{padding:10px 12px;border-bottom:1px solid var(--border);color:var(--text)}
+th{padding:7px 10px;text-align:left;color:var(--text2);font-weight:500;border-bottom:1px solid var(--border);font-size:11px;text-transform:uppercase}
+td{padding:8px 10px;border-bottom:1px solid var(--border);color:var(--text)}
 tr:hover td{background:var(--bg3)}
-.tag{display:inline-flex;align-items:center;gap:3px;padding:1px 7px;border-radius:10px;font-size:10px;background:var(--bg3);border:1px solid var(--border);color:var(--text2)}
+.tag{display:inline-flex;align-items:center;gap:3px;padding:1px 6px;border-radius:10px;font-size:10px;background:var(--bg3);border:1px solid var(--border);color:var(--text2)}
 .tag-api{border-color:var(--accent2);color:var(--accent2)}
 .tag-cli{border-color:var(--accent3);color:var(--accent3)}
 /* Modal */
 .modal-overlay{display:none;position:fixed;inset:0;z-index:999;background:rgba(0,0,0,.6);align-items:center;justify-content:center}
 .modal-overlay.show{display:flex}
 .modal{background:var(--bg2);border:1px solid var(--border);border-radius:12px;width:520px;max-height:80vh;overflow-y:auto;box-shadow:0 16px 48px rgba(0,0,0,.4)}
-.modal-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
-.modal-header h3{font-size:15px;font-weight:600}
-.modal-close{width:28px;height:28px;border-radius:50%;border:none;background:transparent;color:var(--text2);cursor:pointer;font-size:16px}
+.modal-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.modal-header h3{font-size:14px;font-weight:600}
+.modal-close{width:26px;height:26px;border-radius:50%;border:none;background:transparent;color:var(--text2);cursor:pointer;font-size:15px}
 .modal-close:hover{background:var(--bg3);color:var(--text)}
-.modal-body{padding:20px}
-.modal-footer{padding:12px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px}
+.modal-body{padding:18px}
+.modal-footer{padding:10px 18px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px}
 /* Form */
-.form-group{margin-bottom:16px}
-.form-group label{display:block;font-size:12px;color:var(--text2);margin-bottom:5px;font-weight:500}
-.form-group input,.form-group select{width:100%;padding:8px 12px;border-radius:var(--radius);border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:13px;font-family:inherit;outline:none;transition:border-color .15s}
+.form-group{margin-bottom:14px}
+.form-group label{display:block;font-size:12px;color:var(--text2);margin-bottom:4px;font-weight:500}
+.form-group input,.form-group select{width:100%;padding:7px 10px;border-radius:var(--radius);border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:13px;font-family:inherit;outline:none;transition:border-color .15s}
 .form-group input:focus,.form-group select:focus{border-color:var(--accent)}
-.form-group .hint{font-size:10px;color:var(--text2);margin-top:3px}
-.form-row{display:flex;gap:12px}
+.form-group .hint{font-size:10px;color:var(--text2);margin-top:2px}
+.form-row{display:flex;gap:10px}
 .form-row .form-group{flex:1}
 /* Checkbox group */
-.checkbox-group{display:flex;flex-wrap:wrap;gap:8px;padding:4px 0}
-.checkbox-group label{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2);cursor:pointer;padding:4px 10px;border-radius:6px;border:1px solid var(--border);transition:all .1s}
+.checkbox-group{display:flex;flex-wrap:wrap;gap:6px;padding:3px 0}
+.checkbox-group label{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--text2);cursor:pointer;padding:3px 8px;border-radius:6px;border:1px solid var(--border);transition:all .1s}
 .checkbox-group label:hover{border-color:var(--accent);color:var(--text)}
 .checkbox-group input[type="checkbox"]{display:none}
 .checkbox-group input[type="checkbox"]:checked+span{color:var(--accent)}
 .checkbox-group label:has(input:checked){border-color:var(--accent);background:rgba(88,166,255,.08)}
 /* Empty */
 .empty{text-align:center;padding:40px 20px;color:var(--text2)}
-.empty .icon{font-size:40px;margin-bottom:12px;opacity:.3}
+.empty .icon{font-size:36px;margin-bottom:10px;opacity:.3}
 .empty p{font-size:13px}
-.empty .sub{font-size:11px;margin-top:4px}
-/* Chat */
-.chat-messages{flex:1;overflow-y:auto;padding:16px 24px}
-.msg-row{display:flex;gap:12px;margin-bottom:16px;animation:fadeIn .2s ease}
-@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
-.msg-row .avatar{width:30px;height:30px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:13px;margin-top:2px}
+.empty .sub{font-size:11px;margin-top:3px}
+
+/* Chat header */
+.chat-header{display:flex;align-items:center;gap:6px;padding:8px 14px;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0;min-height:40px}
+.chat-header .session-label{font-size:12px;font-weight:600;color:var(--text)}
+.chat-header .session-sub{font-size:11px;color:var(--text2);margin-left:4px}
+.chat-header .actions{margin-left:auto;display:flex;gap:4px}
+.chat-messages{flex:1;overflow-y:auto;padding:14px 18px}
+.chat-messages::-webkit-scrollbar{width:5px}
+.chat-messages::-webkit-scrollbar-track{background:transparent}
+.chat-messages::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+.msg-row{display:flex;gap:10px;margin-bottom:14px;animation:fadeIn .2s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.msg-row .avatar{width:28px;height:28px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;margin-top:1px}
 .msg-row .body{flex:1;min-width:0}
-.msg-row .header{display:flex;align-items:center;gap:8px;margin-bottom:2px}
-.msg-row .name{font-size:12px;font-weight:600}
+.msg-row .header{display:flex;align-items:center;gap:6px;margin-bottom:1px}
+.msg-row .name{font-size:11px;font-weight:600}
 .msg-row .time{font-size:10px;color:var(--text2);margin-left:auto}
 .msg-row .text{font-size:13px;line-height:1.55;white-space:pre-wrap;word-break:break-word;color:var(--text)}
 .msg-row.user .text{color:var(--accent2)}
-.chat-input{display:flex;gap:8px;padding:12px 24px 16px;border-top:1px solid var(--border);background:var(--bg2)}
-.chat-input textarea{flex:1;padding:8px 12px;border-radius:var(--radius);border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:13px;font-family:inherit;outline:none;resize:none;min-height:36px;max-height:100px;line-height:1.4}
+/* Thinking animation */
+.thinking-text{display:flex;align-items:center;gap:8px;color:var(--text2);font-size:13px}
+.dot-pulse{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--accent);animation:pulse 1.2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:.3;transform:scale(.8)}50%{opacity:1;transform:scale(1.2)}}
+.chat-input{display:flex;gap:8px;padding:10px 14px 12px;border-top:1px solid var(--border);background:var(--bg2)}
+.chat-input textarea{flex:1;padding:7px 10px;border-radius:var(--radius);border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:13px;font-family:inherit;outline:none;resize:none;min-height:34px;max-height:90px;line-height:1.4}
 .chat-input textarea:focus{border-color:var(--accent)}
-.chat-input button{padding:8px 16px;border-radius:var(--radius);border:none;background:var(--accent);color:#fff;font-size:13px;cursor:pointer}
+.chat-input button{padding:7px 14px;border-radius:var(--radius);border:none;background:var(--accent);color:#fff;font-size:13px;cursor:pointer}
 .chat-input button:disabled{opacity:.3;cursor:not-allowed}
+/* Chat empty state */
+.chat-empty{flex:1;display:flex;align-items:center;justify-content:center;color:var(--text2);text-align:center}
+.chat-empty .icon{font-size:40px;margin-bottom:10px;opacity:.2}
+.chat-empty p{font-size:13px}
+.chat-empty .sub{font-size:11px;margin-top:3px;opacity:.6}
+
+/* ====== PAGE CONTENT (non-chat pages) ====== */
+.page-content{padding:18px 22px;height:100%;overflow-y:auto}
+.page-content::-webkit-scrollbar{width:5px}
+.page-content::-webkit-scrollbar-track{background:transparent}
+.page-content::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+.page-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.page-header .info{font-size:12px;color:var(--text2)}
+.page-title-area{display:flex;align-items:baseline;gap:10px;margin-bottom:14px}
+.page-title-area h2{font-size:16px;font-weight:600}
+.page-title-area .sub{font-size:12px;color:var(--text2)}
 </style>
 </head>
 <body>
@@ -110,120 +149,137 @@ tr:hover td{background:var(--bg3)}
     <div class="logo">M</div>
     <h1>Modul Agent</h1>
   </div>
-  <div class="nav-item active" onclick="switchPage('chat',this)">
-    <span>💬</span> 聊天
+  <div class="nav-section-top">
+    <div class="nav-item active" onclick="switchPage('chat',this)">
+      <span>💬</span> 聊天
+    </div>
+    <div class="chat-sessions-header">
+      会话列表
+      <span class="new-btn" onclick="openNewSession()">+</span>
+    </div>
+    <div class="chat-sessions-list" id="chatSessionList">
+    </div>
   </div>
-  <div class="nav-item" onclick="switchPage('agents',this)">
-    <span>🤖</span> API模型
-  </div>
-  <div class="nav-item" onclick="switchPage('tools',this)">
-    <span>🛠️</span> 工具管理
-  </div>
-  <div class="nav-item" onclick="switchPage('sessions',this)">
-    <span>📋</span> 会话
-  </div>
-  <div class="nav-item" onclick="switchPage('outputs',this)">
-    <span>📂</span> 产出
+  <div class="nav-section-bottom">
+    <div class="nav-item" onclick="switchPage('agents',this)">
+      <span>🤖</span> API模型
+    </div>
+    <div class="nav-item" onclick="switchPage('tools',this)">
+      <span>🛠️</span> 工具管理
+    </div>
+    <div class="nav-item" onclick="switchPage('sessions',this)">
+      <span>📋</span> 会话
+    </div>
+    <div class="nav-item" onclick="switchPage('outputs',this)">
+      <span>📂</span> 产出
+    </div>
   </div>
 </div>
 
 <div class="main">
-  <div class="topbar" id="topbar">
-    <h2 id="pageTitle">聊天</h2>
-    <span class="sub" id="pageSub"></span>
-  </div>
+  <div class="content-wrap">
 
   <!-- ====== Chat Page ====== -->
-  <div class="page active" id="pageChat" style="display:flex;flex-direction:column;height:100%">
-    <div style="display:flex;align-items:center;gap:6px;padding:8px 16px;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0">
-      <select id="chatSessionSelect" style="flex:1;padding:6px 10px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:12px;font-family:inherit;outline:none;cursor:pointer"
-        onchange="switchToSession(this.value)">
-        <option value="">— 选择会话 —</option>
-      </select>
-      <button class="btn btn-sm" onclick="openSessionSettings()" title="会话设置" id="chatSettingsBtn" style="display:none;font-size:14px">⚙️</button>
-      <button class="btn btn-sm btn-primary" onclick="openNewSession()" title="新建会话">+ 新建</button>
+  <div class="page active" id="pageChat">
+    <div class="chat-header">
+      <span class="session-label" id="chatSessionTitle">聊天</span>
+      <span class="session-sub" id="chatSessionSub"></span>
+      <div class="actions">
+        <button class="btn btn-sm" onclick="openSessionSettings()" title="会话设置" id="chatSettingsBtn" style="display:none">⚙️</button>
+        <button class="btn btn-sm" onclick="openOutputsForSession()" title="查看产出文件" id="chatOutputsBtn" style="display:none">📂</button>
+      </div>
     </div>
     <div class="chat-messages" id="chatMessages">
-      <div class="empty"><div class="icon">💬</div><p>选择或创建一个会话开始聊天</p></div>
+      <div class="chat-empty"><div><div class="icon">💬</div><p>选择左侧会话开始聊天</p><div class="sub">或点「+」新建会话</div></div></div>
     </div>
     <div class="chat-input" id="chatInput" style="display:none">
       <textarea id="chatText" placeholder="发消息...（按 Enter 发送）" rows="1"
         onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat()}"
-        oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,100)+'px'"></textarea>
+        oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,90)+'px'"></textarea>
       <button id="sendBtn" onclick="sendChat()">发送</button>
     </div>
   </div>
 
-  <!-- ====== Agents Page （API模型管理，去掉Hand） ====== -->
+  <!-- ====== Agents Page ====== -->
   <div class="page" id="pageAgents">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-      <div style="font-size:12px;color:var(--text2)">管理 API 大模型（DeepSeek、GPT、Claude 等）</div>
-      <button class="btn btn-primary" onclick="openAddAgent()">+ 添加模型</button>
-    </div>
-    <div class="card">
-      <div class="card-header"><h3>已注册 API 模型</h3></div>
-      <div class="card-body" style="padding:0">
-        <table id="agentTable">
-          <thead><tr><th>名称</th><th>类型</th><th>模型</th><th>供应商</th><th style="width:80px">操作</th></tr></thead>
-          <tbody id="agentTableBody"></tbody>
-        </table>
+    <div class="page-content">
+      <div class="page-header">
+        <div class="info">管理 API 大模型（DeepSeek、GPT、Claude 等）</div>
+        <button class="btn btn-primary" onclick="openAddAgent()">+ 添加模型</button>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>已注册 API 模型</h3></div>
+        <div class="card-body" style="padding:0">
+          <table id="agentTable">
+            <thead><tr><th>名称</th><th>类型</th><th>模型</th><th>供应商</th><th style="width:80px">操作</th></tr></thead>
+            <tbody id="agentTableBody"></tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>
 
   <!-- ====== Tools Page ====== -->
   <div class="page" id="pageTools">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-      <div style="font-size:12px;color:var(--text2)">管理工具插件（Hand），绑定到本机 CLI 代理</div>
-      <button class="btn btn-primary" onclick="openAddCliAgent()">+ 添加本机代理</button>
-    </div>
-    <div class="card">
-      <div class="card-header"><h3>可用工具（Hand 插件）</h3></div>
-      <div class="card-body" style="padding:0">
-        <table id="handTable">
-          <thead><tr><th>名称</th><th>描述</th><th>工具</th><th>绑定到</th></tr></thead>
-          <tbody id="handTableBody"></tbody>
-        </table>
+    <div class="page-content">
+      <div class="page-header">
+        <div class="info">管理工具插件（Hand），绑定到本机 CLI 代理</div>
+        <button class="btn btn-primary" onclick="openAddCliAgent()">+ 添加本机代理</button>
       </div>
-    </div>
-    <div class="card" style="margin-top:16px">
-      <div class="card-header"><h3>本机代理（CLI）</h3><span style="font-size:11px;color:var(--text2)">通过勾选绑定 Hand</span></div>
-      <div class="card-body" id="cliAgentHands">
-        <div class="empty"><p>暂无 CLI 类型代理</p><div class="sub">点右上角「添加本机代理」</div></div>
+      <div class="card">
+        <div class="card-header"><h3>可用工具（Hand 插件）</h3></div>
+        <div class="card-body" style="padding:0">
+          <table id="handTable">
+            <thead><tr><th>名称</th><th>描述</th><th>工具</th><th>绑定到</th></tr></thead>
+            <tbody id="handTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card" style="margin-top:16px">
+        <div class="card-header"><h3>本机代理（CLI）</h3><span style="font-size:11px;color:var(--text2)">通过勾选绑定 Hand</span></div>
+        <div class="card-body" id="cliAgentHands">
+          <div class="empty"><p>暂无 CLI 类型代理</p><div class="sub">点右上角「添加本机代理」</div></div>
+        </div>
       </div>
     </div>
   </div>
 
   <!-- ====== Sessions Page ====== -->
   <div class="page" id="pageSessions">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-      <div style="font-size:12px;color:var(--text2)">创建和管理多模型协作会话</div>
-      <button class="btn btn-primary" onclick="openNewSession()">+ 新建会话</button>
-    </div>
-    <div class="card">
-      <div class="card-header"><h3>所有会话</h3></div>
-      <div class="card-body" style="padding:0">
-        <table>
-          <thead><tr><th>名称</th><th>模型</th><th>调度模式</th><th>消息</th><th>创建时间</th><th style="width:80px">操作</th></tr></thead>
-          <tbody id="sessionTableBody"></tbody>
-        </table>
+    <div class="page-content">
+      <div class="page-header">
+        <div class="info">创建和管理多模型协作会话</div>
+        <button class="btn btn-primary" onclick="openNewSession()">+ 新建会话</button>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>所有会话</h3></div>
+        <div class="card-body" style="padding:0">
+          <table>
+            <thead><tr><th>名称</th><th>模型</th><th>调度模式</th><th>消息</th><th>创建时间</th><th style="width:80px">操作</th></tr></thead>
+            <tbody id="sessionTableBody"></tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>
-</div>
 
-<!-- ====== Outputs Page ====== -->
-<div class="page" id="pageOutputs">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-    <div style="font-size:12px;color:var(--text2)">查看 AI 产出的文件（作文、代码、报告等）</div>
-  </div>
-  <div class="card">
-    <div class="card-header"><h3>📂 产出文件</h3></div>
-    <div class="card-body" id="outputsBody" style="padding:0">
-      <div class="empty"><p>暂无产出文件</p><div class="sub">AI 模型写文件后会出现在这里</div></div>
+  <!-- ====== Outputs Page ====== -->
+  <div class="page" id="pageOutputs">
+    <div class="page-content">
+      <div class="page-title-area">
+        <h2>📂 产出文件</h2>
+        <span class="sub" id="outputsSub">查看 AI 产出内容</span>
+      </div>
+      <div class="card">
+        <div class="card-body" id="outputsBody" style="padding:0">
+          <div class="empty"><p>暂无产出文件</p><div class="sub">AI 模型写文件后会出现在这里</div></div>
+        </div>
+      </div>
     </div>
   </div>
-</div>
+
+  </div><!-- /content-wrap -->
+</div><!-- /main -->
 
 <!-- ====== Add / Edit Agent Modal ====== -->
 <div class="modal-overlay" id="addAgentModal">
@@ -383,7 +439,14 @@ async function init() {
   await Promise.all([loadAgents(), loadHands(), loadProviders(), loadSessions(), loadTools()]);
   renderAgentTable();
   renderSessionTable();
-  renderChatSidebar();
+  renderChatSessionList();
+  // 如果有会话，默认选中第一个
+  const entries = Object.entries(state.sessions);
+  if (entries.length > 0 && !state.currentSessionId) {
+    switchToSession(entries[0][0]);
+  } else if (state.currentSessionId) {
+    renderChatPage();
+  }
 }
 
 async function loadAgents() {
@@ -407,11 +470,9 @@ function switchPage(page, el) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   const pageMap = { chat: 'pageChat', agents: 'pageAgents', tools: 'pageTools', sessions: 'pageSessions', outputs: 'pageOutputs' };
   document.getElementById(pageMap[page]).classList.add('active');
-  if (page === 'chat') { renderChatPage(); document.getElementById('pageChat').style.display = 'flex'; }
-  else { document.getElementById('pageChat').style.display = 'none'; }
+  if (page === 'chat') { renderChatPage(); renderChatSessionList(); }
   if (page === 'tools') renderToolsPage();
   if (page === 'outputs') renderOutputsPage();
-  document.getElementById('pageTitle').textContent = {chat:'聊天',agents:'API模型',tools:'工具管理',sessions:'会话',outputs:'产出'}[page];
 }
 
 // ====== Agents Management ======
@@ -436,7 +497,7 @@ function renderAgentTable() {
   `).join('');
   // 更新会话创建页的勾选框
   renderSessionAgentCheckboxes();
-  renderChatSidebar();
+  renderChatSessionList();
 }
 
 function openAddAgent() {
@@ -799,6 +860,21 @@ function renderSessionTable() {
   `).join('');
 }
 
+// 渲染聊天左侧的会话列表
+function renderChatSessionList() {
+  const list = document.getElementById('chatSessionList');
+  const entries = Object.entries(state.sessions);
+  list.innerHTML = entries.length === 0
+    ? '<div style="padding:20px;text-align:center;color:var(--text2);font-size:12px">暂无会话<br>点「+」新建</div>'
+    : entries.sort((a, b) => (b[1].updatedAt||b[1].createdAt||'') > (a[1].updatedAt||a[1].createdAt||'') ? 1 : -1).map(([id, s]) => `
+    <div class="chat-session-item ${id === state.currentSessionId ? 'active' : ''}" onclick="switchToSession('${id}')">
+      <span>💬</span>
+      <span class="name">${escHtml(s.name)}</span>
+      <button class="del-btn" onclick="event.stopPropagation();deleteSession('${id}')" title="删除">✕</button>
+    </div>
+  `).join('');
+}
+
 function renderSessionAgentCheckboxes() {
   const div = document.getElementById('sessionAgentCheckboxes');
   const entries = Object.entries(state.agents).filter(([, a]) => a.type !== 'cli');
@@ -834,7 +910,7 @@ async function submitNewSession() {
   closeModal('newSessionModal');
   await loadSessions();
   renderSessionTable();
-  renderChatSidebar();
+  renderChatSessionList();
   switchToSession(session.id);
 }
 
@@ -847,57 +923,68 @@ async function deleteSession(id) {
   }
   await loadSessions();
   renderSessionTable();
-  renderChatSidebar();
+  renderChatSessionList();
+  renderChatPage();
 }
 
 // ====== Chat ======
-function renderChatSidebar() {
-  // 更新会话下拉框
-  const sel = document.getElementById('chatSessionSelect');
-  if (sel) {
-    const cur = sel.value;
-    sel.innerHTML = '<option value="">— 选择会话 —</option>' +
-      Object.entries(state.sessions).map(([id, s]) =>
-        `<option value="${id}" ${id === state.currentSessionId ? 'selected' : ''}>${s.name}</option>`
-      ).join('');
-  }
-}
 
 function renderChatPage() {
   const msgs = document.getElementById('chatMessages');
   const input = document.getElementById('chatInput');
   const settingsBtn = document.getElementById('chatSettingsBtn');
+  const title = document.getElementById('chatSessionTitle');
+  const sub = document.getElementById('chatSessionSub');
+  const outputsBtn = document.getElementById('chatOutputsBtn');
+  
   if (!state.currentSessionId) {
-    msgs.innerHTML = '<div class="empty"><div class="icon">💬</div><p>从「会话」页面选择一个会话</p><div class="sub">或者创建一个新的</div></div>';
+    msgs.innerHTML = '<div class="chat-empty"><div><div class="icon">💬</div><p>选择左侧会话开始聊天</p><div class="sub">或点「+」新建会话</div></div></div>';
     input.style.display = 'none';
     if (settingsBtn) settingsBtn.style.display = 'none';
-    document.getElementById('pageSub').textContent = '';
+    if (outputsBtn) outputsBtn.style.display = 'none';
+    title.textContent = '聊天';
+    sub.textContent = '';
     return;
   }
   const session = state.sessions[state.currentSessionId];
-  if (!session) { renderChatPage(); return; }
-  document.getElementById('pageSub').textContent = `${session.name} · ${(session.agents||[]).join(', ')}`;
+  if (!session) { state.currentSessionId = null; renderChatPage(); renderChatSessionList(); return; }
+  
+  title.textContent = `💬 ${session.name}`;
+  sub.textContent = `${(session.agents||[]).join(', ')} · ${session.orchestrator}`;
   input.style.display = 'flex';
   document.getElementById('sendBtn').disabled = false;
   if (settingsBtn) settingsBtn.style.display = 'inline-flex';
+  if (outputsBtn) outputsBtn.style.display = 'inline-flex';
 
   // 加载消息
   fetch(`/api/sessions/${state.currentSessionId}/messages`).then(r=>r.json()).then(msgsData => {
-    msgs.innerHTML = msgsData.map(m => {
-      if (m.role === 'user') {
-        return `<div class="msg-row user"><div class="avatar" style="background:rgba(63,185,80,.15);color:var(--accent2)">👤</div><div class="body"><div class="header"><span class="name">你</span><span class="time">${new Date(m.timestamp).toLocaleTimeString()}</span></div><div class="text">${escHtml(m.content)}</div></div></div>`;
-      } else {
-        return `<div class="msg-row"><div class="avatar" style="background:rgba(88,166,255,.15);color:var(--accent)">🤖</div><div class="body"><div class="header"><span class="name">${m.agent||'AI'}</span><span class="time">${new Date(m.timestamp).toLocaleTimeString()}</span></div><div class="text">${escHtml(m.content)}</div></div></div>`;
-      }
-    }).join('');
+    msgs.innerHTML = msgsData.length === 0
+      ? '<div class="chat-empty"><div><div class="icon">💬</div><p>开始对话吧</p></div></div>'
+      : msgsData.map(m => {
+        if (m.role === 'user') {
+          return `<div class="msg-row user"><div class="avatar" style="background:rgba(63,185,80,.15);color:var(--accent2)">👤</div><div class="body"><div class="header"><span class="name">你</span><span class="time">${new Date(m.timestamp).toLocaleTimeString()}</span></div><div class="text">${escHtml(m.content)}</div></div></div>`;
+        } else {
+          return `<div class="msg-row"><div class="avatar" style="background:rgba(88,166,255,.15);color:var(--accent)">🤖</div><div class="body"><div class="header"><span class="name">${m.agent||'AI'}</span><span class="time">${new Date(m.timestamp).toLocaleTimeString()}</span></div><div class="text">${escHtml(m.content)}</div></div></div>`;
+        }
+      }).join('');
     msgs.scrollTop = msgs.scrollHeight;
   });
 }
 
 function switchToSession(id) {
   state.currentSessionId = id;
-  switchPage('chat', document.querySelector('.nav-item:first-child'));
+  switchPage('chat', document.querySelectorAll('.nav-item')[0]);
   renderChatPage();
+  renderChatSessionList();
+}
+
+// 打开当前会话的产出目录
+function openOutputsForSession() {
+  const sid = state.currentSessionId;
+  if (!sid) return;
+  // 切换到产出页面，传入 sessionId
+  switchPage('outputs', document.querySelectorAll('.nav-item')[4]);
+  renderOutputsPage(sid);
 }
 
 async function sendChat() {
@@ -908,9 +995,14 @@ async function sendChat() {
 
   // 显示消息
   const msgs = document.getElementById('chatMessages');
-  const empty = msgs.querySelector('.empty');
+  const empty = msgs.querySelector('.chat-empty');
   if (empty) msgs.innerHTML = '';
   msgs.innerHTML += `<div class="msg-row user"><div class="avatar" style="background:rgba(63,185,80,.15);color:var(--accent2)">👤</div><div class="body"><div class="header"><span class="name">你</span><span class="time">${new Date().toLocaleTimeString()}</span></div><div class="text">${escHtml(text)}</div></div></div>`;
+  msgs.scrollTop = msgs.scrollHeight;
+
+  // 显示思考动画
+  const thinkingId = 'thinking_' + Date.now();
+  msgs.innerHTML += `<div class="msg-row" id="${thinkingId}"><div class="avatar" style="background:rgba(88,166,255,.15);color:var(--accent)">🤖</div><div class="body"><div class="header"><span class="name">AI</span></div><div class="text thinking-text"><span class="dot-pulse"></span> 思考中...</div></div></div>`;
   msgs.scrollTop = msgs.scrollHeight;
 
   document.getElementById('sendBtn').disabled = true;
@@ -921,6 +1013,11 @@ async function sendChat() {
       body: JSON.stringify({ text }),
     });
     const data = await res.json();
+
+    // 移除思考动画
+    const thinkingEl = document.getElementById(thinkingId);
+    if (thinkingEl) thinkingEl.remove();
+
     if (data.results) {
       for (const r of data.results) {
         if (r.text) {
@@ -941,7 +1038,13 @@ async function sendChat() {
       }
     }
     msgs.scrollTop = msgs.scrollHeight;
-  } catch(e) { console.error(e); }
+  } catch(e) {
+    console.error(e);
+    const thinkingEl = document.getElementById(thinkingId);
+    if (thinkingEl) {
+      thinkingEl.innerHTML = `<div class="avatar" style="background:rgba(248,81,73,.15);color:var(--danger)">⚠️</div><div class="body"><div class="text" style="color:var(--danger)">请求失败，请重试</div></div>`;
+    }
+  }
   document.getElementById('sendBtn').disabled = false;
 }
 
@@ -951,18 +1054,41 @@ async function loadOutputs() {
   return await res.json();
 }
 
-function renderOutputsPage() {
+function renderOutputsPage(sessionId) {
   const body = document.getElementById('outputsBody');
-  loadOutputs().then(data => {
+
+  // 决定加载全部还是单个会话
+  const loadFn = sessionId
+    ? fetch(`/api/outputs/${sessionId}`).then(r => r.json()).then(data => {
+        const obj = {};
+        if (data.files && data.files.length > 0) obj[sessionId] = data;
+        else if (data.files) obj[sessionId] = { name: data.name, files: [] };
+        return obj;
+      }).catch(() => ({}))
+    : loadOutputs();
+
+  loadFn.then(data => {
     const entries = Object.entries(data);
     if (entries.length === 0) {
-      body.innerHTML = '<div class="empty"><div class="icon">📂</div><p>暂无产出文件</p><div class="sub">让 AI 帮你写文件，完成后会出现在这里</div></div>';
+      body.innerHTML = sessionId
+        ? '<div class="empty"><div class="icon">📂</div><p>该会话暂无产出文件</p><div class="sub">发消息让 AI 写文件后会显示在这里</div></div>'
+        : '<div class="empty"><div class="icon">📂</div><p>暂无产出文件</p><div class="sub">让 AI 帮你写文件，完成后会出现在这里</div></div>';
       return;
     }
+
+    // 更新子标题
+    const sub = document.getElementById('outputsSub');
+    if (sessionId) {
+      const s = data[sessionId];
+      sub.textContent = s ? `📁 ${s.name}` : '查看 AI 产出内容';
+    } else {
+      sub.textContent = `共 ${entries.length} 个会话`;
+    }
+
     body.innerHTML = entries.map(([sid, s]) => `
-      <div style="padding:14px 16px;border-bottom:1px solid var(--border)">
+      <div style="padding:14px 16px;border-bottom:1px solid var(--border);${sid === sessionId ? 'background:var(--bg3);border-left:3px solid var(--accent)' : ''}">
         <div style="font-size:13px;font-weight:600;margin-bottom:8px;color:var(--accent)">📁 ${escHtml(s.name)}</div>
-        ${s.files.map(f => `
+        ${s.files && s.files.length > 0 ? s.files.map(f => `
           <div style="display:flex;align-items:center;gap:10px;padding:6px 10px;border-radius:6px;background:var(--bg3);margin-bottom:4px">
             <span style="font-size:13px;flex:1">📄 ${escHtml(f.name)}</span>
             <span style="font-size:11px;color:var(--text2)">${(f.size / 1024).toFixed(1)} KB</span>
@@ -970,7 +1096,8 @@ function renderOutputsPage() {
             <button class="btn btn-sm" onclick="previewOutput('${encodeURIComponent(f.path)}')" title="预览">👁️</button>
             <a href="/api/outputs/download?path=${encodeURIComponent(f.path)}" class="btn btn-sm" download title="下载">⬇️</a>
           </div>
-        `).join('')}
+        `).join('') : '<div style="padding:8px 10px;font-size:12px;color:var(--text2)">（暂无文件）</div>'}
+        ${sid === sessionId && (!s.files || s.files.length === 0) ? '' : ''}
       </div>
     `).join('');
   }).catch(() => {

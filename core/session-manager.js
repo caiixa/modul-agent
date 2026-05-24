@@ -9,10 +9,11 @@ const fs = require('fs');
 const path = require('path');
 
 class SessionManager {
-  constructor({ sharedRoot = './shared', outputsRoot = './outputs' } = {}) {
-    this.sessions = new Map(); // sessionId -> Session
+  constructor({ sharedRoot = './shared', outputsRoot = './outputs', persistPath = '' } = {}) {
+    this.sessions = new Map();
     this.sharedRoot = path.resolve(sharedRoot);
     this.outputsRoot = path.resolve(outputsRoot);
+    this.persistPath = persistPath || path.join(path.resolve(outputsRoot, '..'), 'sessions.json');
     // 确保共享目录存在
     if (!fs.existsSync(this.sharedRoot)) {
       fs.mkdirSync(this.sharedRoot, { recursive: true });
@@ -20,6 +21,55 @@ class SessionManager {
     // 确保产出目录存在
     if (!fs.existsSync(this.outputsRoot)) {
       fs.mkdirSync(this.outputsRoot, { recursive: true });
+    }
+    // 从文件加载持久化会话
+    this._loadPersisted();
+  }
+
+  // 保存到文件
+  _savePersisted() {
+    try {
+      const data = [];
+      for (const [, session] of this.sessions) {
+        data.push({
+          id: session.id,
+          name: session.name,
+          agents: session.agents,
+          orchestrator: session.orchestrator,
+          messages: session.messages,
+          sharedDir: session.sharedDir,
+          outputDir: session.outputDir,
+          createdAt: session.createdAt,
+          updatedAt: session.updatedAt,
+          metadata: session.metadata || {},
+        });
+      }
+      fs.writeFileSync(this.persistPath, JSON.stringify(data, null, 2), 'utf-8');
+    } catch (e) {
+      console.error(`[Session] ⚠️ 保存会话持久化失败: ${e.message}`);
+    }
+  }
+
+  // 从文件加载
+  _loadPersisted() {
+    try {
+      if (!fs.existsSync(this.persistPath)) return;
+      const raw = fs.readFileSync(this.persistPath, 'utf-8');
+      const data = JSON.parse(raw);
+      if (!Array.isArray(data)) return;
+      for (const s of data) {
+        // 确保目录存在
+        if (!fs.existsSync(s.sharedDir)) {
+          try { fs.mkdirSync(s.sharedDir, { recursive: true }); } catch {}
+        }
+        if (!fs.existsSync(s.outputDir)) {
+          try { fs.mkdirSync(s.outputDir, { recursive: true }); } catch {}
+        }
+        this.sessions.set(s.id, s);
+      }
+      console.log(`[Session] ✅ 已恢复 ${data.length} 个持久化会话`);
+    } catch (e) {
+      console.error(`[Session] ⚠️ 加载持久化会话失败: ${e.message}`);
     }
   }
 
@@ -54,6 +104,7 @@ class SessionManager {
     this.sessions.set(id, session);
     console.log(`[Session] ✅ 会话 "${session.name}" (${id}) 已创建`);
     console.log(`[Session]   📂 产出目录: ${outputDir}`);
+    this._savePersisted();
     return session;
   }
 
@@ -70,6 +121,7 @@ class SessionManager {
     if (!this.sessions.has(id)) return false;
     this.sessions.delete(id);
     console.log(`[Session] 🗑️ 会话 "${id}" 已删除`);
+    this._savePersisted();
     return true;
   }
 
@@ -99,6 +151,7 @@ class SessionManager {
     session.agents.push(agentName);
     session.updatedAt = new Date().toISOString();
     console.log(`[Session] ➕ Agent "${agentName}" 加入会话 "${session.name}"`);
+    this._savePersisted();
     return session;
   }
 
@@ -108,6 +161,7 @@ class SessionManager {
     session.agents = session.agents.filter(a => a !== agentName);
     session.updatedAt = new Date().toISOString();
     console.log(`[Session] ➖ Agent "${agentName}" 离开会话 "${session.name}"`);
+    this._savePersisted();
     return session;
   }
 
@@ -126,11 +180,12 @@ class SessionManager {
     session.messages.push(msg);
     session.updatedAt = new Date().toISOString();
 
-    // 限制历史长度（防止内存爆炸）
+    // 限制历史长度（防止文件过大）
     if (session.messages.length > 500) {
       session.messages.splice(0, session.messages.length - 500);
     }
 
+    this._savePersisted();
     return msg;
   }
 
@@ -164,6 +219,7 @@ class SessionManager {
     if (data.agents) session.agents = data.agents;
     if (data.orchestrator) session.orchestrator = data.orchestrator;
     session.updatedAt = new Date().toISOString();
+    this._savePersisted();
     return { ...session, messageCount: session.messages.length };
   }
 
@@ -175,6 +231,7 @@ class SessionManager {
     }
     session.orchestrator = mode;
     session.updatedAt = new Date().toISOString();
+    this._savePersisted();
     return session;
   }
 
@@ -202,14 +259,28 @@ class SessionManager {
         }).map(f => {
           const fp = path.join(dir, f);
           const stat = fs.statSync(fp);
-          return { name: f, size: stat.size, modified: stat.mtime, sessionId: id, sessionName: session.name };
+          return { name: f, size: stat.size, modified: stat.mtime, path: fp, sessionId: id, sessionName: session.name };
         });
-        if (files.length > 0) {
-          result[id] = { name: session.name, dir, files };
-        }
+        result[id] = { name: session.name, dir, files };
       }
     }
     return result;
+  }
+
+  // 获取指定会话的产出文件列表
+  getSessionOutputs(sessionId) {
+    const session = this.get(sessionId);
+    const dir = session.outputDir;
+    if (!fs.existsSync(dir)) return { name: session.name, dir, files: [] };
+    const files = fs.readdirSync(dir).filter(f => {
+      const fp = path.join(dir, f);
+      return fs.statSync(fp).isFile();
+    }).map(f => {
+      const fp = path.join(dir, f);
+      const stat = fs.statSync(fp);
+      return { name: f, size: stat.size, modified: stat.mtime, path: fp };
+    });
+    return { name: session.name, dir, files };
   }
 
   _genId() {

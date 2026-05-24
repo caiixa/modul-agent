@@ -309,6 +309,17 @@ class ModulWebServer {
       return this._json(res, 200, this.app.sessions.listOutputs());
     }
 
+    // API: 获取指定会话的产出文件
+    const sessionOutputsMatch = url.match(/^\/api\/outputs\/([a-f0-9]+)$/);
+    if (sessionOutputsMatch && method === 'GET') {
+      try {
+        const data = this.app.sessions.getSessionOutputs(sessionOutputsMatch[1]);
+        return this._json(res, 200, data);
+      } catch (err) {
+        return this._json(res, 404, { error: err.message });
+      }
+    }
+
     // API: 读取产出文件内容（文本文件）
     const outputFileMatch = url.match(/^\/api\/outputs\/read\?path=(.+)$/);
     if (outputFileMatch && method === 'GET') {
