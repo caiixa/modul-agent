@@ -99,6 +99,7 @@ class AgentRegistry {
 
   // 获取 Agent
   get(name) {
+    this._loadPersisted();
     if (!this.agents.has(name)) {
       throw new Error(`Agent "${name}" 未注册`);
     }

@@ -12,24 +12,35 @@ const Orchestrator = require('./orchestrator.js');
 const ApiAdapter = require('../adapters/api-adapter.js');
 const CliAdapter = require('../adapters/cli-adapter.js');
 const path = require('path');
+const fs = require('fs');
 
 class ModulAgent {
   constructor(options = {}) {
     this.options = {
-      sharedRoot: options.sharedRoot || './shared',
+      sharedRoot: options.sharedRoot || path.resolve(__dirname, '..', 'shared'),
+      outputsRoot: options.outputsRoot || path.resolve(__dirname, '..', 'outputs'),
       handsDir: options.handsDir || '',
       ...options,
     };
+
+    // 确保 outputs 根目录存在
+    const outputsRoot = path.resolve(this.options.outputsRoot);
+    if (!fs.existsSync(outputsRoot)) {
+      fs.mkdirSync(outputsRoot, { recursive: true });
+    }
 
     // 初始化组件
     this.registry = new AgentRegistry({
       persistPath: path.join(__dirname, '..', 'config', 'agents.json'),
     });
-    this.sessions = new SessionManager({ sharedRoot: this.options.sharedRoot });
+    this.sessions = new SessionManager({
+      sharedRoot: this.options.sharedRoot,
+      outputsRoot: this.options.outputsRoot,
+    });
     this.hands = new HandLoader(this.options.handsDir);
     this.tools = new ToolExecutor(this.hands);
     
-    const apiAdapter = new ApiAdapter();
+    const apiAdapter = new ApiAdapter(this.hands);
     const cliAdapter = new CliAdapter();
     
     this.orchestrator = new Orchestrator({

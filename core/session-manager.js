@@ -9,18 +9,26 @@ const fs = require('fs');
 const path = require('path');
 
 class SessionManager {
-  constructor({ sharedRoot = './shared' } = {}) {
+  constructor({ sharedRoot = './shared', outputsRoot = './outputs' } = {}) {
     this.sessions = new Map(); // sessionId -> Session
     this.sharedRoot = path.resolve(sharedRoot);
+    this.outputsRoot = path.resolve(outputsRoot);
     // 确保共享目录存在
     if (!fs.existsSync(this.sharedRoot)) {
       fs.mkdirSync(this.sharedRoot, { recursive: true });
+    }
+    // 确保产出目录存在
+    if (!fs.existsSync(this.outputsRoot)) {
+      fs.mkdirSync(this.outputsRoot, { recursive: true });
     }
   }
 
   // 创建会话
   create({ name, agents = [], orchestrator = 'broadcast', sharedDir = '' } = {}) {
     const id = this._genId();
+    // 产出子目录名称: 会话ID_名称
+    const safeName = (name || `session-${id.slice(0, 8)}`).replace(/[^a-zA-Z0-9_\u4e00-\u9fff-]/g, '_');
+    const outputDir = path.join(this.outputsRoot, `${id}_${safeName}`);
     const session = {
       id,
       name: name || `session-${id.slice(0, 8)}`,
@@ -28,6 +36,7 @@ class SessionManager {
       orchestrator,                   // broadcast | direct | chain | master
       messages: [],                   // 消息历史
       sharedDir: sharedDir || path.join(this.sharedRoot, id),
+      outputDir,                      // 产出目录
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       metadata: {},
@@ -37,9 +46,14 @@ class SessionManager {
     if (!fs.existsSync(session.sharedDir)) {
       fs.mkdirSync(session.sharedDir, { recursive: true });
     }
+    // 确保产出目录存在
+    if (!fs.existsSync(outputDir)) {
+      fs.mkdirSync(outputDir, { recursive: true });
+    }
 
     this.sessions.set(id, session);
     console.log(`[Session] ✅ 会话 "${session.name}" (${id}) 已创建`);
+    console.log(`[Session]   📂 产出目录: ${outputDir}`);
     return session;
   }
 
@@ -168,6 +182,34 @@ class SessionManager {
   getSharedDir(sessionId) {
     const session = this.get(sessionId);
     return session.sharedDir;
+  }
+
+  // 获取会话产出目录路径
+  getOutputDir(sessionId) {
+    const session = this.get(sessionId);
+    return session.outputDir;
+  }
+
+  // 列出所有会话的产出目录
+  listOutputs() {
+    const result = {};
+    for (const [id, session] of this.sessions) {
+      const dir = session.outputDir;
+      if (fs.existsSync(dir)) {
+        const files = fs.readdirSync(dir).filter(f => {
+          const fp = path.join(dir, f);
+          return fs.statSync(fp).isFile();
+        }).map(f => {
+          const fp = path.join(dir, f);
+          const stat = fs.statSync(fp);
+          return { name: f, size: stat.size, modified: stat.mtime, sessionId: id, sessionName: session.name };
+        });
+        if (files.length > 0) {
+          result[id] = { name: session.name, dir, files };
+        }
+      }
+    }
+    return result;
   }
 
   _genId() {

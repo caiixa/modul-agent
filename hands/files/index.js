@@ -17,8 +17,8 @@ const filesHand = {
       parameters: {
         path: { type: 'string', description: '文件路径' },
       },
-      execute: async ({ path: filePath, sharedDir }) => {
-        const absPath = _resolvePath(filePath, sharedDir);
+      execute: async ({ path: filePath, sharedDir, outputDir }) => {
+        const absPath = _resolvePath(filePath, sharedDir, outputDir);
         if (!fs.existsSync(absPath)) {
           return { error: `文件不存在: ${absPath}` };
         }
@@ -26,7 +26,6 @@ const filesHand = {
         if (stat.isDirectory()) {
           return { error: `路径是目录，不是文件: ${absPath}` };
         }
-        // 限制文件大小（10MB）
         if (stat.size > 10 * 1024 * 1024) {
           return { error: `文件过大 (${(stat.size / 1024 / 1024).toFixed(1)}MB)，最大支持 10MB` };
         }
@@ -49,8 +48,8 @@ const filesHand = {
         path: { type: 'string', description: '文件路径' },
         content: { type: 'string', description: '文件内容' },
       },
-      execute: async ({ path: filePath, content, sharedDir }) => {
-        const absPath = _resolvePath(filePath, sharedDir);
+      execute: async ({ path: filePath, content, sharedDir, outputDir }) => {
+        const absPath = _resolvePath(filePath, sharedDir, outputDir);
         const dir = path.dirname(absPath);
         if (!fs.existsSync(dir)) {
           fs.mkdirSync(dir, { recursive: true });
@@ -70,8 +69,8 @@ const filesHand = {
         path: { type: 'string', description: '文件路径' },
         content: { type: 'string', description: '要追加的内容' },
       },
-      execute: async ({ path: filePath, content, sharedDir }) => {
-        const absPath = _resolvePath(filePath, sharedDir);
+      execute: async ({ path: filePath, content, sharedDir, outputDir }) => {
+        const absPath = _resolvePath(filePath, sharedDir, outputDir);
         const dir = path.dirname(absPath);
         if (!fs.existsSync(dir)) {
           fs.mkdirSync(dir, { recursive: true });
@@ -86,8 +85,8 @@ const filesHand = {
       parameters: {
         path: { type: 'string', description: '目录路径，默认共享目录根', default: '.' },
       },
-      execute: async ({ path: dirPath, sharedDir }) => {
-        const absPath = _resolvePath(dirPath, sharedDir);
+      execute: async ({ path: dirPath, sharedDir, outputDir }) => {
+        const absPath = _resolvePath(dirPath, sharedDir, outputDir);
         if (!fs.existsSync(absPath)) {
           return { error: `目录不存在: ${absPath}` };
         }
@@ -107,8 +106,8 @@ const filesHand = {
         pattern: { type: 'string', description: '搜索关键词或 glob 模式' },
         path: { type: 'string', description: '搜索目录，默认共享目录根', default: '.' },
       },
-      execute: async ({ pattern, path: dirPath, sharedDir }) => {
-        const absPath = _resolvePath(dirPath, sharedDir);
+      execute: async ({ pattern, path: dirPath, sharedDir, outputDir }) => {
+        const absPath = _resolvePath(dirPath, sharedDir, outputDir);
         const results = [];
         
         function walk(dir) {
@@ -138,8 +137,8 @@ const filesHand = {
       parameters: {
         path: { type: 'string', description: '要删除的文件路径' },
       },
-      execute: async ({ path: filePath, sharedDir }) => {
-        const absPath = _resolvePath(filePath, sharedDir);
+      execute: async ({ path: filePath, sharedDir, outputDir }) => {
+        const absPath = _resolvePath(filePath, sharedDir, outputDir);
         if (!fs.existsSync(absPath)) {
           return { error: `路径不存在: ${absPath}` };
         }
@@ -155,17 +154,23 @@ const filesHand = {
   },
 };
 
-// 解析路径：相对路径拼共享目录，绝对路径直接用（限制在共享目录内）
-function _resolvePath(inputPath, sharedDir) {
+// 解析路径：相对路径拼共享目录，绝对路径直接用（限制在共享目录或产出目录内）
+function _resolvePath(inputPath, sharedDir, outputDir) {
   const base = sharedDir || process.cwd();
   if (path.isAbsolute(inputPath)) {
-    // 限制在共享目录内，不能逃逸
+    // 限制在共享目录或产出目录内，不能逃逸
     const resolved = path.resolve(inputPath);
     const baseResolved = path.resolve(base);
-    if (!resolved.startsWith(baseResolved)) {
-      throw new Error(`路径越权: ${inputPath} 不在共享目录 ${base} 内`);
+    if (resolved.startsWith(baseResolved)) {
+      return resolved;
     }
-    return resolved;
+    if (outputDir) {
+      const outputResolved = path.resolve(outputDir);
+      if (resolved.startsWith(outputResolved)) {
+        return resolved;
+      }
+    }
+    throw new Error(`路径越权: ${inputPath} 不在共享目录或产出目录内`);
   }
   return path.resolve(base, inputPath);
 }

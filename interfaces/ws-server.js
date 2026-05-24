@@ -304,6 +304,57 @@ class ModulWebServer {
       }
     }
 
+    // API: 列出所有会话的产出文件
+    if (url === '/api/outputs' && method === 'GET') {
+      return this._json(res, 200, this.app.sessions.listOutputs());
+    }
+
+    // API: 读取产出文件内容（文本文件）
+    const outputFileMatch = url.match(/^\/api\/outputs\/read\?path=(.+)$/);
+    if (outputFileMatch && method === 'GET') {
+      try {
+        const filePath = decodeURIComponent(outputFileMatch[1]);
+        const absPath = path.resolve(filePath);
+        // 安全检查：必须在 outputs/ 目录内
+        const outputsRoot = path.resolve(this.app.options.outputsRoot || path.join(__dirname, '..', 'outputs'));
+        if (!absPath.startsWith(outputsRoot)) {
+          return this._json(res, 403, { error: '越权访问' });
+        }
+        if (!fs.existsSync(absPath) || fs.statSync(absPath).isDirectory()) {
+          return this._json(res, 404, { error: '文件不存在' });
+        }
+        const content = fs.readFileSync(absPath, 'utf-8');
+        return this._json(res, 200, { content, path: absPath });
+      } catch (e) {
+        return this._json(res, 500, { error: e.message });
+      }
+    }
+
+    // API: 下载产出文件
+    const outputDownloadMatch = url.match(/^\/api\/outputs\/download\?path=(.+)$/);
+    if (outputDownloadMatch && method === 'GET') {
+      try {
+        const filePath = decodeURIComponent(outputDownloadMatch[1]);
+        const absPath = path.resolve(filePath);
+        const outputsRoot = path.resolve(this.app.options.outputsRoot || path.join(__dirname, '..', 'outputs'));
+        if (!absPath.startsWith(outputsRoot)) {
+          return this._json(res, 403, { error: '越权访问' });
+        }
+        if (!fs.existsSync(absPath) || fs.statSync(absPath).isDirectory()) {
+          return this._json(res, 404, { error: '文件不存在' });
+        }
+        const name = path.basename(absPath);
+        res.writeHead(200, {
+          'Content-Type': 'application/octet-stream',
+          'Content-Disposition': `attachment; filename="${encodeURIComponent(name)}"`,
+        });
+        fs.createReadStream(absPath).pipe(res);
+        return;
+      } catch (e) {
+        return this._json(res, 500, { error: e.message });
+      }
+    }
+
     // 静态文件
     if (url === '/' || url.startsWith('/')) {
       let filePath = url === '/' ? '/index.html' : url;

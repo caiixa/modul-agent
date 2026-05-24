@@ -4,14 +4,16 @@
     "type": "api",
     "provider": "deepseek",
     "model": "deepseek-chat",
-    "apiKey": "${DEEPSEEK_API_KEY}",
+    "apiKey": "sk-0fe49c6ecc0a4225a9c70b12970f8056",
     "baseUrl": "https://api.deepseek.com",
     "command": "",
     "workingDir": "",
-    "hands": [],
+    "hands": [
+      "files"
+    ],
     "metadata": {},
     "createdAt": "2026-05-24T13:45:04.217Z",
-    "updatedAt": "2026-05-24T14:08:12.689Z"
+    "updatedAt": "2026-05-24T14:24:29.023Z"
   },
   "hermes": {
     "name": "hermes",

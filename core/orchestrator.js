@@ -196,6 +196,7 @@ class Orchestrator {
       toolsPrompt,
       history,
       sharedDir: session.sharedDir,
+      outputDir: session.outputDir,
     });
 
     // 处理工具调用（如果有）
@@ -203,7 +204,9 @@ class Orchestrator {
     if (response.toolCalls && response.toolCalls.length > 0) {
       const toolResults = await this.toolExecutor.executeBatch(
         response.toolCalls,
-        agentConfig.hands
+        agentConfig.hands,
+        session.sharedDir,
+        session.outputDir
       );
 
       // 把工具执行结果塞回给模型，继续推理
@@ -216,6 +219,7 @@ class Orchestrator {
           { role: 'tool', content: JSON.stringify(toolResults) },
         ],
         sharedDir: session.sharedDir,
+        outputDir: session.outputDir,
       });
 
       finalText = continued.text || response.text;
@@ -227,7 +231,9 @@ class Orchestrator {
       if (parsedCalls.length > 0) {
         const toolResults = await this.toolExecutor.executeBatch(
           parsedCalls,
-          agentConfig.hands
+          agentConfig.hands,
+          session.sharedDir,
+          session.outputDir
         );
 
         const cleanText = this.toolExecutor.stripToolMarkers(response.text);

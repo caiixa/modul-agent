@@ -14,9 +14,11 @@ class ToolExecutor {
 
   // 执行一次工具调用
   // toolCall: { name: "read_file", arguments: { path: "/tmp/x" } }
-  async execute(toolCall, agentHands) {
+  async execute(toolCall, agentHands, sharedDir, outputDir) {
     const toolName = toolCall.name || toolCall.action;
     const params = toolCall.arguments || toolCall.parameters || {};
+    if (sharedDir) params.sharedDir = sharedDir;
+    if (outputDir) params.outputDir = outputDir;
 
     // 查找这个工具属于哪个 Hand
     const handName = this.handLoader.findHandForTool(toolName);
@@ -58,10 +60,10 @@ class ToolExecutor {
   }
 
   // 执行多个工具调用（一个模型回复可能包含多次工具调用）
-  async executeBatch(toolCalls, agentHands) {
+  async executeBatch(toolCalls, agentHands, sharedDir, outputDir) {
     const results = [];
     for (const call of toolCalls) {
-      const result = await this.execute(call, agentHands);
+      const result = await this.execute(call, agentHands, sharedDir, outputDir);
       results.push(result);
     }
     return results;
