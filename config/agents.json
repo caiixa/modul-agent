@@ -8,11 +8,10 @@
     "baseUrl": "",
     "command": "",
     "workingDir": "",
-    "hands": [
-      "files"
-    ],
+    "hands": [],
     "metadata": {},
-    "createdAt": "2026-05-24T13:45:04.217Z"
+    "createdAt": "2026-05-24T13:45:04.217Z",
+    "updatedAt": "2026-05-24T13:51:58.561Z"
   },
   "hermes": {
     "name": "hermes",

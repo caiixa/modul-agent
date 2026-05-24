@@ -448,8 +448,9 @@ function renderHandTable() {
     return;
   }
   tbody.innerHTML = entries.map(([name, h]) => {
+    // 只显示 CLI 代理的绑定
     const boundTo = Object.entries(toolsData.agentHands)
-      .filter(([, ah]) => (ah.hands||[]).includes(name))
+      .filter(([, ah]) => ah.type === 'cli' && (ah.hands||[]).includes(name))
       .map(([an]) => an);
     return `<tr>
       <td><strong>${name}</strong></td>
