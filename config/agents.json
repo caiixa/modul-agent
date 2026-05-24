@@ -9,7 +9,8 @@
     "command": "",
     "workingDir": "",
     "hands": [
-      "files"
+      "files",
+      "agent-chat"
     ],
     "metadata": {},
     "createdAt": "2026-05-24T13:45:04.217Z",
@@ -27,11 +28,13 @@
     "hands": [
       "files",
       "shell",
-      "web-search"
+      "web-search",
+      "agent-chat",
+      "mcp"
     ],
     "metadata": {},
     "createdAt": "2026-05-24T13:45:04.218Z",
-    "updatedAt": "2026-05-24T16:03:53.139Z"
+    "updatedAt": "2026-05-24T16:43:36.143Z"
   },
   "lobster": {
     "name": "lobster",
@@ -45,11 +48,13 @@
     "hands": [
       "files",
       "shell",
-      "web-search"
+      "web-search",
+      "agent-chat",
+      "mcp"
     ],
     "metadata": {},
     "createdAt": "2026-05-24T13:45:04.218Z",
-    "updatedAt": "2026-05-24T16:03:52.783Z"
+    "updatedAt": "2026-05-24T16:43:35.824Z"
   },
   "阿里云百炼": {
     "name": "阿里云百炼",
@@ -60,7 +65,9 @@
     "baseUrl": "https://dashscope.aliyuncs.com/compatible-mode/v1",
     "command": "",
     "workingDir": "",
-    "hands": [],
+    "hands": [
+      "agent-chat"
+    ],
     "metadata": {},
     "createdAt": "2026-05-24T15:35:11.050Z",
     "updatedAt": "2026-05-24T15:36:45.801Z"
