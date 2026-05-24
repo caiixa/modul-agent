@@ -2,7 +2,7 @@
 // API Adapter — 适配 API 类型模型（DeepSeek/GPT/Claude 等）
 // ============================================================
 // 处理 OpenAI 兼容格式的 API 调用
-// 支持原生 Function Calling
+// 支持原生 Function Calling + 流式输出
 // ============================================================
 
 const https = require('https');
@@ -18,12 +18,10 @@ class ApiAdapter {
     };
   }
 
-  // 调用 API 模型
+  // 调用 API 模型（非流式）
   async call(agentConfig, { message, toolsPrompt, history, sharedDir, outputDir }) {
     const provider = this._resolveProvider(agentConfig);
     const messages = this._buildMessages(agentConfig, message, toolsPrompt, history, outputDir);
-
-    // 构建工具定义（给模型看的 function calling schema）
     const tools = this._buildToolsFromPrompt(agentConfig.hands);
 
     const body = {
@@ -33,7 +31,6 @@ class ApiAdapter {
       max_tokens: 4096,
     };
 
-    // 有工具定义且模型支持 function calling 时传 tools
     if (tools.length > 0) {
       body.tools = tools;
       body.tool_choice = 'auto';
@@ -48,7 +45,6 @@ class ApiAdapter {
       
       const result = { text: '', toolCalls: [] };
 
-      // 处理 tool_calls（function calling）
       if (choice.message?.tool_calls?.length > 0) {
         result.toolCalls = choice.message.tool_calls.map(tc => ({
           name: tc.function.name,
@@ -66,12 +62,52 @@ class ApiAdapter {
     }
   }
 
+  // 流式调用 API 模型 — 通过 onEvent 回调推送阶段性事件
+  // onEvent: ({ type: 'thinking'|'text'|'tool_calls'|'tool_result'|'error'|'done', data })
+  async callStream(agentConfig, { message, toolsPrompt, history, sharedDir, outputDir }, onEvent) {
+    const provider = this._resolveProvider(agentConfig);
+    const messages = this._buildMessages(agentConfig, message, toolsPrompt, history, outputDir);
+    const tools = this._buildToolsFromPrompt(agentConfig.hands);
+
+    const body = {
+      model: agentConfig.model,
+      messages,
+      stream: true,
+      max_tokens: 4096,
+    };
+
+    if (tools.length > 0) {
+      body.tools = tools;
+      body.tool_choice = 'auto';
+    }
+
+    try {
+      onEvent({ type: 'thinking', data: { agent: agentConfig.name } });
+
+      const startTime = Date.now();
+      const response = await this._requestStream(provider, agentConfig.apiKey, body, (chunk) => {
+        onEvent({ type: 'text', data: { agent: agentConfig.name, text: chunk } });
+      });
+
+      // 如果返回了 tool_calls，发事件
+      if (response.toolCalls?.length > 0) {
+        onEvent({ type: 'tool_calls', data: { agent: agentConfig.name, toolCalls: response.toolCalls } });
+      }
+
+      const elapsed = Date.now() - startTime;
+      onEvent({ type: 'done', data: { agent: agentConfig.name, elapsed } });
+
+      return response;
+    } catch (err) {
+      console.error(`[ApiAdapter] ❌ 流式调用 ${agentConfig.name} 失败:`, err.message);
+      onEvent({ type: 'error', data: { agent: agentConfig.name, error: err.message } });
+      return { text: '', toolCalls: [] };
+    }
+  }
+
   _resolveProvider(agentConfig) {
     if (agentConfig.baseUrl) {
-      // baseUrl 可能已经包含路径（如 dashscope.aliyuncs.com/compatible-mode/v1）
-      // 所以要正确处理拼接
       let baseUrl = agentConfig.baseUrl.replace(/\/+$/, '');
-      // 检查是否已有 /chat/completions 后缀
       if (!baseUrl.endsWith('/chat/completions')) {
         baseUrl += '/chat/completions';
       }
@@ -92,7 +128,9 @@ class ApiAdapter {
           `当用户要求操作文件时，请使用工具来完成，不要只是口头答应。\n` +
           `例如用户说"读文件"，你应该调用 read_file 工具。\n` +
           `用户说"写文件"，你应该调用 write_file 工具。\n` +
-          `用户说"列出目录"，你应该调用 list_files 工具。\n\n` : '\n') +
+          `用户说"列出目录"，你应该调用 list_files 工具。\n` +
+          `用户说"执行命令"或"运行终端"，你应该调用 execute_command 工具。\n` +
+          `用户说"搜索"或"查资料"，你应该调用 web_search 工具。\n\n` : '\n') +
         `共享文件库目录: ${agentConfig._sharedDir || '/shared'}\n` +
         (outputDir ? `产出目录（用户想要的文件请写到这里）: ${outputDir}\n` +
           `重要：写文件到产出目录时，请在 write_file 的 path 参数中使用完整绝对路径，例如 "${outputDir}/文件名.txt"\n` : ''),
@@ -121,7 +159,6 @@ class ApiAdapter {
               type: param.type || 'string',
               description: param.description || '',
             };
-            // 有 default 的不是必填
             if (!('default' in param)) required.push(key);
           }
         }
@@ -142,6 +179,7 @@ class ApiAdapter {
     return tools;
   }
 
+  // 非流式请求
   _request(provider, apiKey, body) {
     return new Promise((resolve, reject) => {
       let requestUrl;
@@ -176,6 +214,109 @@ class ApiAdapter {
           } catch {
             reject(new Error(`API 返回非 JSON: ${data.slice(0, 200)}`));
           }
+        });
+      });
+
+      req.on('error', reject);
+      req.write(postData);
+      req.end();
+    });
+  }
+
+  // 流式请求 — 解析 SSE 流
+  _requestStream(provider, apiKey, body, onChunk) {
+    return new Promise((resolve, reject) => {
+      let requestUrl;
+      if (provider.chatPath) {
+        requestUrl = new URL(provider.chatPath, provider.baseUrl);
+      } else {
+        requestUrl = new URL(provider.baseUrl);
+      }
+      const isHttps = requestUrl.protocol === 'https:';
+      const lib = isHttps ? https : http;
+
+      const postData = JSON.stringify(body);
+
+      const options = {
+        hostname: requestUrl.hostname,
+        port: requestUrl.port || (isHttps ? 443 : 80),
+        path: requestUrl.pathname + requestUrl.search,
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Length': Buffer.byteLength(postData),
+          'Accept': 'text/event-stream',
+        },
+      };
+
+      const result = { text: '', toolCalls: [] };
+      let buffer = '';
+
+      const req = lib.request(options, (res) => {
+        res.setEncoding('utf-8');
+
+        res.on('data', (chunk) => {
+          buffer += chunk;
+          const lines = buffer.split('\n');
+          buffer = lines.pop(); // 保留不完整的行
+
+          for (const line of lines) {
+            const trimmed = line.trim();
+            if (!trimmed || !trimmed.startsWith('data: ')) continue;
+
+            const data = trimmed.slice(6).trim();
+
+            // 结束标记
+            if (data === '[DONE]') return;
+
+            try {
+              const parsed = JSON.parse(data);
+              const delta = parsed.choices?.[0]?.delta;
+              if (!delta) continue;
+
+              // 文本内容
+              if (delta.content) {
+                result.text += delta.content;
+                onChunk(delta.content);
+              }
+
+              // tool_calls
+              if (delta.tool_calls) {
+                for (const tc of delta.tool_calls) {
+                  if (tc.function?.name) {
+                    // 新工具调用开始
+                    result.toolCalls.push({
+                      index: tc.index || 0,
+                      name: tc.function.name,
+                      arguments: '',
+                    });
+                  } else if (tc.function?.arguments) {
+                    // 追加参数
+                    const existing = result.toolCalls.find(t => t.index === (tc.index || 0));
+                    if (existing) {
+                      existing.arguments += tc.function.arguments;
+                    }
+                  }
+                }
+              }
+            } catch {
+              // 解析失败，跳过
+            }
+          }
+        });
+
+        res.on('end', () => {
+          // 解析 tool_calls 参数为 JSON
+          for (const tc of result.toolCalls) {
+            try {
+              tc.arguments = JSON.parse(tc.arguments || '{}');
+            } catch {
+              tc.arguments = {};
+            }
+            delete tc.index;
+          }
+          resolve(result);
         });
       });
 

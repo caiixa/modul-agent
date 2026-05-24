@@ -432,10 +432,99 @@ tr:hover td{background:var(--bg3)}
 
 <script>
 // ====== State ======
-let state = { agents: {}, sessions: {}, hands: {}, providers: [], currentSessionId: null, currentProvider: null };
+const state = { agents: {}, hands: {}, sessions: {}, providers: [], currentSessionId: null, currentProvider: null, tools: {} };
+let ws = null;
+let wsReconnectTimer = null;
 
-// ====== Init ======
+function connectWS() {
+  if (ws && ws.readyState === WebSocket.OPEN) return;
+  const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  ws = new WebSocket(`${proto}//${location.host}`);
+  ws.onopen = () => {
+    console.log('[WS] 已连接');
+    // 重新加入当前会话
+    if (state.currentSessionId) {
+      ws.send(JSON.stringify({ type: 'join', sessionId: state.currentSessionId }));
+    }
+  };
+  ws.onclose = () => {
+    console.log('[WS] 已断开，3秒后重连');
+    clearTimeout(wsReconnectTimer);
+    wsReconnectTimer = setTimeout(connectWS, 3000);
+  };
+  ws.onerror = () => ws.close();
+  ws.onmessage = (e) => {
+    try {
+      const pkt = JSON.parse(e.data);
+      if (pkt.type === 'stream') handleStreamEvent(pkt);
+    } catch {}
+  };
+}
+
+// 流式事件处理
+let streamState = { msgRowId: null, agentName: null, textBuffer: '' };
+
+function handleStreamEvent(event) {
+  const msgs = document.getElementById('chatMessages');
+
+  if (event.type === 'session') {
+    // 会话信息
+  } else if (event.type === 'user_message') {
+    // 用户消息已由 sendChat 显示
+  } else if (event.type === 'agent_start') {
+    // 新 Agent 开始回复
+    streamState.agentName = event.data.agent;
+    streamState.textBuffer = '';
+    streamState.msgRowId = 'msg_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
+    msgs.innerHTML += `<div class="msg-row" id="${streamState.msgRowId}"><div class="avatar" style="background:rgba(88,166,255,.15);color:var(--accent)">🤖</div><div class="body"><div class="header"><span class="name">${event.data.agent}</span><span class="time">${new Date().toLocaleTimeString()}</span></div><div class="text thinking-text"><span class="dot-pulse"></span> 思考中...</div></div></div>`;
+    msgs.scrollTop = msgs.scrollHeight;
+  } else if (event.type === 'thinking') {
+    // 思考中，啥也不做（已经在 agent_start 显示了）
+  } else if (event.type === 'text' && event.data.text) {
+    // 追加文本
+    streamState.textBuffer += event.data.text;
+    const el = document.getElementById(streamState.msgRowId);
+    if (el) {
+      el.querySelector('.text').innerHTML = escHtml(streamState.textBuffer);
+      el.querySelector('.text').className = 'text';
+      msgs.scrollTop = msgs.scrollHeight;
+    }
+  } else if (event.type === 'tool_calls') {
+    // 显示工具调用信息
+    const tools = event.data.toolCalls || [];
+    const toolInfo = tools.map(t => `🔧 ${t.name}(${JSON.stringify(t.arguments || {})})`).join('<br>');
+    const el = document.getElementById(streamState.msgRowId);
+    if (el && toolInfo) {
+      el.querySelector('.text').innerHTML += `<br><span style="font-size:11px;color:var(--accent3)">${toolInfo}</span>`;
+      msgs.scrollTop = msgs.scrollHeight;
+    }
+  } else if (event.type === 'tool_executing') {
+    const el = document.getElementById(streamState.msgRowId);
+    if (el) {
+      el.querySelector('.text').innerHTML += `<br><span style="font-size:11px;color:var(--accent3)">⚙️ 正在执行工具...</span>`;
+      msgs.scrollTop = msgs.scrollHeight;
+    }
+  } else if (event.type === 'tool_result') {
+    const el = document.getElementById(streamState.msgRowId);
+    if (el) {
+      el.querySelector('.text').innerHTML += `<br><span style="font-size:11px;color:var(--accent2)">✅ 工具执行完成</span>`;
+      msgs.scrollTop = msgs.scrollHeight;
+    }
+  } else if (event.type === 'agent_done') {
+    // Agent 完成，不做额外操作
+  } else if (event.type === 'agent_error') {
+    const el = document.getElementById(streamState.msgRowId);
+    if (el) {
+      el.querySelector('.text').innerHTML = `<span style="color:var(--danger)">❌ ${event.data.error}</span>`;
+      msgs.scrollTop = msgs.scrollHeight;
+    }
+  } else if (event.type === 'done') {
+    document.getElementById('sendBtn').disabled = false;
+  }
+}
+
 async function init() {
+  connectWS();
   await Promise.all([loadAgents(), loadHands(), loadProviders(), loadSessions(), loadTools()]);
   renderAgentTable();
   renderSessionTable();
@@ -1000,52 +1089,28 @@ async function sendChat() {
   msgs.innerHTML += `<div class="msg-row user"><div class="avatar" style="background:rgba(63,185,80,.15);color:var(--accent2)">👤</div><div class="body"><div class="header"><span class="name">你</span><span class="time">${new Date().toLocaleTimeString()}</span></div><div class="text">${escHtml(text)}</div></div></div>`;
   msgs.scrollTop = msgs.scrollHeight;
 
-  // 显示思考动画
-  const thinkingId = 'thinking_' + Date.now();
-  msgs.innerHTML += `<div class="msg-row" id="${thinkingId}"><div class="avatar" style="background:rgba(88,166,255,.15);color:var(--accent)">🤖</div><div class="body"><div class="header"><span class="name">AI</span></div><div class="text thinking-text"><span class="dot-pulse"></span> 思考中...</div></div></div>`;
-  msgs.scrollTop = msgs.scrollHeight;
-
   document.getElementById('sendBtn').disabled = true;
-  try {
-    const res = await fetch(`/api/sessions/${state.currentSessionId}/send`, {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ text }),
+
+  // 确保 WS 已连接
+  if (!ws || ws.readyState !== WebSocket.OPEN) {
+    connectWS();
+    // 等连接建立
+    await new Promise((resolve) => {
+      const check = setInterval(() => {
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          clearInterval(check);
+          resolve();
+        }
+      }, 100);
     });
-    const data = await res.json();
-
-    // 移除思考动画
-    const thinkingEl = document.getElementById(thinkingId);
-    if (thinkingEl) thinkingEl.remove();
-
-    if (data.results) {
-      for (const r of data.results) {
-        if (r.text) {
-          msgs.innerHTML += `<div class="msg-row"><div class="avatar" style="background:rgba(88,166,255,.15);color:var(--accent)">🤖</div><div class="body"><div class="header"><span class="name">${r.agent||'AI'}</span><span class="time">${new Date().toLocaleTimeString()}</span></div><div class="text">${escHtml(r.text.slice(0,500))}</div></div></div>`;
-        }
-        if (r.error) {
-          msgs.innerHTML += `<div class="msg-row"><div class="avatar" style="background:rgba(248,81,73,.15);color:var(--danger)">⚠️</div><div class="body"><div class="text" style="color:var(--danger)">${r.agent}: ${escHtml(r.error)}</div></div></div>`;
-        }
-        // master mode
-        if (r.master) {
-          msgs.innerHTML += `<div class="msg-row"><div class="avatar" style="background:rgba(188,140,255,.15);color:var(--purple)">👑</div><div class="body"><div class="text">${escHtml(r.master.text||'').slice(0,500)}</div></div></div>`;
-        }
-        if (r.workers) {
-          for (const w of r.workers) {
-            if (w.text) msgs.innerHTML += `<div class="msg-row"><div class="avatar" style="background:rgba(210,153,34,.15);color:var(--accent3)">👷</div><div class="body"><div class="header"><span class="name">${w.agent}</span></div><div class="text">${escHtml(w.text).slice(0,500)}</div></div></div>`;
-          }
-        }
-      }
-    }
-    msgs.scrollTop = msgs.scrollHeight;
-  } catch(e) {
-    console.error(e);
-    const thinkingEl = document.getElementById(thinkingId);
-    if (thinkingEl) {
-      thinkingEl.innerHTML = `<div class="avatar" style="background:rgba(248,81,73,.15);color:var(--danger)">⚠️</div><div class="body"><div class="text" style="color:var(--danger)">请求失败，请重试</div></div>`;
-    }
   }
-  document.getElementById('sendBtn').disabled = false;
+
+  // 通过 WebSocket 流式发送
+  ws.send(JSON.stringify({
+    type: 'send',
+    sessionId: state.currentSessionId,
+    text,
+  }));
 }
 
 // ====== Outputs Page ======

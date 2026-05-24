@@ -418,11 +418,12 @@ class ModulWebServer {
             return;
           }
           try {
-            const results = await this.app.sendMessage(sessionId, pkt.text);
-            // 广播给所有在同一个会话的客户端
-            this._broadcastToSession(sessionId, {
-              type: 'agent_replies',
-              results,
+            // 流式处理
+            await this.app.orchestrator.processMessageStream(sessionId, pkt.text, (event) => {
+              // 只发给当前客户端
+              if (ws.readyState === 1) {
+                ws.send(JSON.stringify({ type: 'stream', ...event }));
+              }
             });
           } catch (err) {
             ws.send(JSON.stringify({ type: 'error', message: err.message }));
