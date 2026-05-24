@@ -428,7 +428,7 @@ function openAddAgent() {
   document.getElementById('agentSubmitBtn').textContent = '添加';
   const sel = document.getElementById('agentProvider');
   sel.innerHTML = '<option value="">— 选择供应商 —</option>' +
-    state.providers.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+    state.providers.filter(p => p.type !== 'cli').map(p => `<option value="${p.id}">${p.name}</option>`).join('');
   document.getElementById('agentModel').innerHTML = '<option value="">— 先选供应商 —</option>';
   document.getElementById('agentName').value = '';
   document.getElementById('agentName').disabled = false;
@@ -451,7 +451,7 @@ function openEditAgent(name) {
   // 供应商
   const sel = document.getElementById('agentProvider');
   sel.innerHTML = '<option value="">— 选择供应商 —</option>' +
-    state.providers.map(p => `<option value="${p.id}" ${p.id === agent.provider ? 'selected' : ''}>${p.name}</option>`).join('');
+    state.providers.filter(p => p.type !== 'cli').map(p => `<option value="${p.id}" ${p.id === agent.provider ? 'selected' : ''}>${p.name}</option>`).join('');
   state.currentProvider = state.providers.find(p => p.id === agent.provider);
 
   // 模型
