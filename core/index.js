@@ -1,7 +1,14 @@
 // ============================================================
 // Modul Agent — 多模型协作运行时
 // ============================================================
-// 入口文件，组装所有核心组件
+// 入口文件，组装所有核心组件：
+//   AgentRegistry → 模型注册表
+//   SessionManager → 会话管理
+//   HandLoader → 插件加载器
+//   ToolExecutor → 工具执行
+//   ApiAdapter / CliAdapter → 模型通信
+//   Orchestrator → 调度器（7种模式）
+// 提供 REPL CLI 界面（直接运行 index.js 时）。
 // ============================================================
 
 const AgentRegistry = require('./agent-registry.js');

@@ -1,6 +1,16 @@
 // ============================================================
 // WebSocket 服务器 — Modul Agent Web UI 后端
 // ============================================================
+// HTTP 静态服务器 + WebSocket 实时推送。
+// API 路由：
+//   GET  /api/status       — 系统状态
+//   GET  /api/agents       — Agent 列表
+//   POST /api/agents       — 注册 Agent
+//   POST /api/sessions     — 创建会话
+//   GET  /api/sessions     — 会话列表
+//   POST /api/chat         — 发消息（流式通过 WebSocket 推送）
+// 静态资源：interfaces/public/
+// ============================================================
 
 const http = require('http');
 const fs = require('fs');
