@@ -53,41 +53,16 @@ class Orchestrator {
     });
     onEvent({ type: 'user_message', data: { text: userMessage } });
 
-    // 对会话中每个 Agent 执行流式调用
-    const results = [];
-    for (const agentName of session.agents) {
-      try {
-        onEvent({ type: 'agent_start', data: { agent: agentName } });
-
-        const agentConfig = this.agentRegistry.get(agentName);
-        const toolsPrompt = this.handLoader.generateToolsPrompt(agentConfig.hands);
-        const history = this.sessionManager.getMessagesForAgent(session.id, agentName);
-
-        let adapter;
-        if (agentConfig.type === 'cli') {
-          adapter = this.adapters.cli;
-        } else {
-          adapter = this.adapters.api;
-        }
-
-        // 使用流式调用
-        const response = await this._callAgentStream(
-          session, agentName, userMessage, onEvent
-        );
-
-        // 记录回复到会话
-        this.sessionManager.addMessage(session.id, {
-          role: 'assistant',
-          agent: agentName,
-          content: response.text,
-        });
-
-        results.push({ agent: agentName, ...response });
-        onEvent({ type: 'agent_done', data: { agent: agentName, text: response.text } });
-      } catch (err) {
-        results.push({ agent: agentName, error: err.message });
-        onEvent({ type: 'agent_error', data: { agent: agentName, error: err.message } });
-      }
+    // 根据调度模式分发
+    let results;
+    switch (mode) {
+      case 'direct':  results = await this._streamDirect(session, userMessage, onEvent); break;
+      case 'chain':   results = await this._streamChain(session, userMessage, onEvent); break;
+      case 'master':  results = await this._streamMaster(session, userMessage, onEvent); break;
+      case 'router':  results = await this._streamRouter(session, userMessage, onEvent); break;
+      case 'debate':  results = await this._streamDebate(session, userMessage, onEvent); break;
+      case 'workflow':results = await this._streamWorkflow(session, userMessage, onEvent); break;
+      default:        results = await this._streamBroadcast(session, userMessage, onEvent);
     }
 
     onEvent({ type: 'done', data: { results } });
@@ -151,11 +126,212 @@ class Orchestrator {
     return results;
   }
 
-  // 主模型模式
+  _parseAssignments(text) {
+    const pattern = /@(\w[\w-]*):\s*(.+?)(?=\n@|\n*$)/gs;
+    const assignments = [];
+    let match;
+    while ((match = pattern.exec(text)) !== null) {
+      assignments.push({ agent: match[1], task: match[2].trim() });
+    }
+    return assignments;
+  }
+
+  // ==================== 流式调度模式实现 ====================
+
+  // 流式广播
+  async _streamBroadcast(session, userMessage, onEvent) {
+    const results = [];
+    for (const agentName of session.agents) {
+      try {
+        onEvent({ type: 'agent_start', data: { agent: agentName } });
+        const response = await this._callAgentStream(session, agentName, userMessage, onEvent);
+        this.sessionManager.addMessage(session.id, {
+          role: 'assistant', agent: agentName, content: response.text,
+        });
+        results.push({ agent: agentName, ...response });
+        onEvent({ type: 'agent_done', data: { agent: agentName, text: response.text } });
+      } catch (err) {
+        results.push({ agent: agentName, error: err.message });
+        onEvent({ type: 'agent_error', data: { agent: agentName, error: err.message } });
+      }
+    }
+    return results;
+  }
+
+  // 流式定向
+  async _streamDirect(session, userMessage, onEvent) {
+    const match = userMessage.match(/^@(\w[\w-]*)\s+(.*)/s);
+    if (!match) return this._streamBroadcast(session, userMessage, onEvent);
+    const targetAgent = match[1];
+    const actualMessage = match[2];
+    if (!session.agents.includes(targetAgent)) {
+      return [{ error: `Agent "${targetAgent}" 不在当前会话中` }];
+    }
+    onEvent({ type: 'agent_start', data: { agent: targetAgent } });
+    const result = await this._callAgentStream(session, targetAgent, actualMessage, onEvent);
+    this.sessionManager.addMessage(session.id, {
+      role: 'assistant', agent: targetAgent, content: result.text,
+    });
+    onEvent({ type: 'agent_done', data: { agent: targetAgent, text: result.text } });
+    return [{ agent: targetAgent, ...result }];
+  }
+
+  // 流式串联
+  async _streamChain(session, userMessage, onEvent) {
+    const results = [];
+    let currentInput = userMessage;
+    for (const agentName of session.agents) {
+      try {
+        onEvent({ type: 'agent_start', data: { agent: agentName } });
+        const result = await this._callAgentStream(session, agentName, currentInput, onEvent);
+        currentInput = result.text;
+        this.sessionManager.addMessage(session.id, {
+          role: 'assistant', agent: agentName, content: result.text,
+        });
+        results.push({ agent: agentName, ...result });
+        onEvent({ type: 'agent_done', data: { agent: agentName, text: result.text } });
+      } catch (err) {
+        results.push({ agent: agentName, error: err.message });
+        onEvent({ type: 'agent_error', data: { agent: agentName, error: err.message } });
+        break;
+      }
+    }
+    return results;
+  }
+
+  // 流式主模型（读取 roles 选组长）
+  async _streamMaster(session, userMessage, onEvent) {
+    if (session.agents.length === 0) return [];
+    // 从 roles 找组长，没有则第一个当组长
+    const leaderRole = (session.roles || []).find(r => r.isLeader);
+    const masterName = leaderRole ? leaderRole.agentName : session.agents[0];
+    const workers = session.agents.filter(a => a !== masterName);
+
+    if (workers.length === 0) return this._streamBroadcast(session, userMessage, onEvent);
+
+    onEvent({ type: 'agent_start', data: { agent: masterName } });
+    const taskPlan = await this._callAgentStream(session, masterName,
+      `你是组长，需要分配任务给以下助手：${workers.join(', ')}\n` +
+      `用户需求：${userMessage}\n请输出任务分配计划，格式：\n` +
+      `@助手A: 任务描述\n@助手B: 任务描述`, onEvent
+    );
+    this.sessionManager.addMessage(session.id, {
+      role: 'assistant', agent: masterName, content: taskPlan.text,
+    });
+    onEvent({ type: 'agent_done', data: { agent: masterName, text: taskPlan.text } });
+
+    const assignments = this._parseAssignments(taskPlan.text);
+    for (const { agent, task } of assignments) {
+      if (!workers.includes(agent)) continue;
+      try {
+        onEvent({ type: 'agent_start', data: { agent } });
+        const result = await this._callAgentStream(session, agent, task, onEvent);
+        this.sessionManager.addMessage(session.id, {
+          role: 'assistant', agent, content: result.text,
+        });
+        onEvent({ type: 'agent_done', data: { agent, text: result.text } });
+      } catch (err) {
+        onEvent({ type: 'agent_error', data: { agent, error: err.message } });
+      }
+    }
+    return { master: taskPlan, workers: assignments.map(a => a.agent) };
+  }
+
+  // 流式路由
+  async _streamRouter(session, userMessage, onEvent) {
+    if (session.agents.length === 0) return [];
+    // 组长或第一个当路由器
+    const leaderRole = (session.roles || []).find(r => r.isLeader);
+    const routerName = leaderRole ? leaderRole.agentName : session.agents[0];
+    const workers = session.agents.filter(a => a !== routerName);
+    if (workers.length === 0) return this._streamBroadcast(session, userMessage, onEvent);
+
+    onEvent({ type: 'agent_start', data: { agent: routerName } });
+    const routePlan = await this._callAgentStream(session, routerName,
+      `你是智能路由分配器。分析用户消息，从以下助手中选择最合适的一个执行任务。\n\n` +
+      `可用助手：\n${workers.map((w, i) => `${i + 1}. ${w}`).join('\n')}\n\n` +
+      `用户消息：${userMessage}\n\n` +
+      `只回复助手名称。格式：@助手名`, onEvent
+    );
+    const targetMatch = routePlan.text.match(/@(\w[\w-]*)/);
+    const targetName = targetMatch ? targetMatch[1] : workers[0];
+    this.sessionManager.addMessage(session.id, {
+      role: 'assistant', agent: routerName,
+      content: `📡 智能路由：将任务分配给了 @${targetName}`,
+    });
+    onEvent({ type: 'agent_done', data: { agent: routerName, text: `📡 路由给 @${targetName}` } });
+
+    if (!session.agents.includes(targetName)) {
+      return [{ error: `路由器选择的 "${targetName}" 不在会话中` }];
+    }
+    onEvent({ type: 'agent_start', data: { agent: targetName } });
+    const result = await this._callAgentStream(session, targetName, userMessage, onEvent);
+    this.sessionManager.addMessage(session.id, {
+      role: 'assistant', agent: targetName, content: result.text,
+    });
+    onEvent({ type: 'agent_done', data: { agent: targetName, text: result.text } });
+    return [{ router: routerName, target: targetName, result }];
+  }
+
+  // 流式辩论
+  async _streamDebate(session, userMessage, onEvent) {
+    if (session.agents.length < 2) return this._streamBroadcast(session, userMessage, onEvent);
+    const allResults = [];
+    for (const agentName of session.agents) {
+      onEvent({ type: 'agent_start', data: { agent: agentName } });
+      const result = await this._callAgentStream(session, agentName, userMessage, onEvent);
+      this.sessionManager.addMessage(session.id, {
+        role: 'assistant', agent: agentName, content: result.text,
+      });
+      onEvent({ type: 'agent_done', data: { agent: agentName, text: result.text } });
+      allResults.push({ agent: agentName, text: result.text });
+    }
+    // 裁判
+    const judgeName = session.agents[0];
+    onEvent({ type: 'agent_start', data: { agent: judgeName } });
+    const judgePrompt = `你是裁判。以下是多个 AI 助手对同一个问题的回答。请选出最佳答案并说明理由。\n\n` +
+      `问题：${userMessage}\n\n` +
+      allResults.map(r => `--- ${r.agent} ---\n${r.text}`).join('\n\n') +
+      `\n\n格式：\n🏆 最佳：@助手名\n理由：...`;
+    const judgeResult = await this._callAgentStream(session, judgeName, judgePrompt, onEvent);
+    this.sessionManager.addMessage(session.id, {
+      role: 'assistant', agent: judgeName,
+      content: `🏆 辩论裁决：\n${judgeResult.text}`,
+    });
+    onEvent({ type: 'agent_done', data: { agent: judgeName, text: judgeResult.text } });
+    return { answers: allResults, verdict: { judge: judgeName, text: judgeResult.text } };
+  }
+
+  // 流式工作流
+  async _streamWorkflow(session, userMessage, onEvent) {
+    if (session.agents.length === 0) return [];
+    const results = [];
+    let currentInput = userMessage;
+    for (let i = 0; i < session.agents.length; i++) {
+      const agentName = session.agents[i];
+      const stepMessage = (i === 0)
+        ? userMessage
+        : `上一步结果：\n${currentInput}\n\n请继续处理。` +
+          (i < session.agents.length - 1 ? ' 处理完后将结果传递给下一步。' : ' 这是最后一步，请给出完整的最终输出。');
+      onEvent({ type: 'agent_start', data: { agent: agentName } });
+      const result = await this._callAgentStream(session, agentName, stepMessage, onEvent);
+      currentInput = result.text;
+      this.sessionManager.addMessage(session.id, {
+        role: 'assistant', agent: agentName,
+        content: `[步骤 ${i + 1}/${session.agents.length}] ${result.text}`,
+      });
+      onEvent({ type: 'agent_done', data: { agent: agentName, text: result.text } });
+      results.push({ agent: agentName, step: i + 1, text: result.text });
+    }
+    return { workflow: results, finalOutput: currentInput };
+  }
+
+  // 非流式主模型 / 路由 — 也读取 roles 组长
   async _masterMode(session, userMessage) {
     if (session.agents.length === 0) return [];
-    const masterName = session.agents[0];
-    const workers = session.agents.slice(1);
+    const leaderRole = (session.roles || []).find(r => r.isLeader);
+    const masterName = leaderRole ? leaderRole.agentName : session.agents[0];
+    const workers = session.agents.filter(a => a !== masterName);
 
     if (workers.length === 0) return this._broadcast(session, userMessage);
 
@@ -185,18 +361,6 @@ class Orchestrator {
     );
     return { master: taskPlan, workers: workerResults };
   }
-
-  _parseAssignments(text) {
-    const pattern = /@(\w[\w-]*):\s*(.+?)(?=\n@|\n*$)/gs;
-    const assignments = [];
-    let match;
-    while ((match = pattern.exec(text)) !== null) {
-      assignments.push({ agent: match[1], task: match[2].trim() });
-    }
-    return assignments;
-  }
-
-  // 非流式单次 Agent 调用
   async _callAgent(session, agentName, message) {
     const agentConfig = this.agentRegistry.get(agentName);
     // 注入 orchestrator 引用供 agent_chat 工具使用
@@ -327,8 +491,10 @@ class Orchestrator {
   // ==================== 路由模式 ====================
   async _routerMode(session, userMessage) {
     if (session.agents.length === 0) return [];
-    const routerName = session.agents[0];
-    const workers = session.agents.slice(1);
+    // 组长或第一个当路由器
+    const leaderRole = (session.roles || []).find(r => r.isLeader);
+    const routerName = leaderRole ? leaderRole.agentName : session.agents[0];
+    const workers = session.agents.filter(a => a !== routerName);
     if (workers.length === 0) return this._broadcast(session, userMessage);
 
     // 用第一个模型做路由器，分析用户输入

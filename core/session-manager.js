@@ -32,6 +32,7 @@ class SessionManager {
           id: session.id,
           name: session.name,
           agents: session.agents,
+          roles: session.roles,
           orchestrator: session.orchestrator,
           messages: session.messages,
           sharedDir: session.sharedDir,
@@ -62,6 +63,10 @@ class SessionManager {
         if (!fs.existsSync(s.outputDir)) {
           try { fs.mkdirSync(s.outputDir, { recursive: true }); } catch {}
         }
+        // 兼容旧版：没有 roles 时从 agents 生成
+        if (!s.roles) {
+          s.roles = (s.agents || []).map(a => this._defaultRole(a));
+        }
         this.sessions.set(s.id, s);
       }
       console.log(`[Session] ✅ 已恢复 ${data.length} 个持久化会话`);
@@ -71,15 +76,20 @@ class SessionManager {
   }
 
   // 创建会话
-  create({ name, agents = [], orchestrator = 'broadcast' } = {}) {
+  create({ name, agents = [], roles, orchestrator = 'broadcast' } = {}) {
     const id = this._genId();
     // 产出子目录名称: 会话ID_名称
     const safeName = (name || `session-${id.slice(0, 8)}`).replace(/[^a-zA-Z0-9_\u4e00-\u9fff-]/g, '_');
     const outputDir = path.join(this.outputsRoot, `${id}_${safeName}`);
+
+    // 如果没有 roles，从 agents 自动生成
+    const computedRoles = roles || agents.map(a => this._defaultRole(a));
+
     const session = {
       id,
       name: name || `session-${id.slice(0, 8)}`,
-      agents: [...agents],           // Agent 名称列表
+      agents: computedRoles.map(r => r.agentName), // 兼容旧字段
+      roles: computedRoles,
       orchestrator,                   // broadcast | direct | chain | master
       messages: [],                   // 消息历史
       sharedDir: outputDir,  // 共享目录 = 产出目录，不再分开
@@ -126,6 +136,7 @@ class SessionManager {
         id,
         name: session.name,
         agents: session.agents,
+        roles: session.roles,
         orchestrator: session.orchestrator,
         messageCount: session.messages.length,
         createdAt: session.createdAt,
@@ -210,6 +221,10 @@ class SessionManager {
     const session = this.sessions.get(sessionId);
     if (data.name) session.name = data.name;
     if (data.agents) session.agents = data.agents;
+    if (data.roles) {
+      session.roles = data.roles;
+      session.agents = data.roles.map(r => r.agentName);
+    }
     if (data.orchestrator) session.orchestrator = data.orchestrator;
     session.updatedAt = new Date().toISOString();
     this._savePersisted();
@@ -278,6 +293,29 @@ class SessionManager {
 
   _genId() {
     return crypto.randomBytes(8).toString('hex');
+  }
+
+  // 从 Agent 名称生成默认角色
+  _defaultRole(agentName) {
+    // 尝试取注册表信息来推断模型等信息
+    const iconMap = {
+      'deepseek': '🧠',
+      'gpt': '🟢',
+      'claude': '🟣',
+      'hermes': '⚡',
+      'lobster': '🦞',
+      'openclaw': '🦞',
+    };
+    const matchedKey = Object.keys(iconMap).find(k => agentName.toLowerCase().includes(k));
+    return {
+      agentName,
+      title: agentName,
+      icon: matchedKey ? iconMap[matchedKey] : '🤖',
+      model: '',
+      description: '',
+      tags: [],
+      isLeader: false,
+    };
   }
 }
 

@@ -226,6 +226,7 @@ class ModulWebServer {
         const session = this.app.createSession({
           name: body.name || '新会话',
           agents: body.agents || [],
+          roles: body.roles || undefined,
           orchestrator: body.orchestrator || 'broadcast',
         });
         return this._json(res, 200, session);

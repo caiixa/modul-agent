@@ -91,6 +91,41 @@ tr:hover td{background:var(--bg3)}
 .checkbox-group input[type="checkbox"]{display:none}
 .checkbox-group input[type="checkbox"]:checked+span{color:var(--accent)}
 .checkbox-group label:has(input:checked){border-color:var(--accent);background:rgba(88,166,255,.08)}
+/* Role card (QQ群成员卡片) */
+.role-card{display:flex;align-items:center;gap:8px;padding:8px 10px;margin-bottom:6px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);transition:border-color .15s}
+.role-card:hover{border-color:var(--accent)}
+.role-card .role-icon{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.role-card .role-info{flex:1;min-width:0}
+.role-card .role-info .role-name{font-size:13px;font-weight:600;color:var(--text)}
+.role-card .role-info .role-meta{font-size:10px;color:var(--text2);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.role-card .role-tags{display:flex;gap:3px;margin-top:2px;flex-wrap:wrap}
+.role-card .role-tag{font-size:9px;padding:1px 5px;border-radius:4px;background:rgba(88,166,255,.12);color:var(--accent);border:1px solid rgba(88,166,255,.2)}
+.role-card .leader-badge{font-size:9px;padding:1px 5px;border-radius:4px;background:rgba(255,193,7,.15);color:#ffc107;border:1px solid rgba(255,193,7,.3);margin-left:4px}
+.role-card .role-actions{display:flex;gap:4px;flex-shrink:0}
+.role-card .role-actions button{background:none;border:none;cursor:pointer;font-size:13px;padding:2px;border-radius:4px;transition:background .1s;color:var(--text2)}
+.role-card .role-actions button:hover{background:var(--bg2);color:var(--text)}
+.role-card .role-edit-fields{display:flex;flex-wrap:wrap;gap:6px;width:100%;margin-top:4px}
+.role-card .role-edit-fields input,.role-card .role-edit-fields select{background:var(--bg2);border:1px solid var(--border);border-radius:4px;padding:3px 6px;color:var(--text);font-size:11px;flex:1;min-width:60px;outline:none}
+.role-card .role-edit-fields input:focus,.role-card .role-edit-fields select:focus{border-color:var(--accent)}
+/* 群成员头像列表（侧边栏） */
+.group-avatars{display:flex;gap:2px;margin-top:2px;padding-left:2px}
+.group-avatars .ga{width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;border:1.5px solid var(--bg2);margin-left:-4px;flex-shrink:0}
+.group-avatars .ga:first-child{margin-left:0}
+/* 消息气泡群聊风格 */
+.msg-row{display:flex;gap:10px;margin-bottom:12px;padding:0 2px}
+.msg-row .avatar{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;margin-top:2px}
+.msg-row .body{flex:1;min-width:0}
+.msg-row .body .header{display:flex;align-items:center;gap:6px;margin-bottom:2px}
+.msg-row .body .header .name{font-size:12px;font-weight:600;color:var(--text)}
+.msg-row .body .header .name.leader{color:#ffc107}
+.msg-row .body .header .time{font-size:10px;color:var(--text3)}
+.msg-row .body .text{font-size:13px;line-height:1.6;color:var(--text);white-space:pre-wrap;word-break:break-word;padding:8px 12px;border-radius:6px;background:var(--bg3);display:inline-block;max-width:85%}
+.msg-row.user .body .text{background:rgba(63,185,80,.1)}
+/* 群成员展示区 */
+.group-member-list{display:flex;flex-wrap:wrap;gap:6px;padding:6px 0}
+.group-member-item{display:flex;align-items:center;gap:5px;padding:3px 8px 3px 4px;border-radius:20px;background:var(--bg3);border:1px solid var(--border);font-size:11px;color:var(--text2);cursor:default}
+.group-member-item .gmi-icon{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px}
+.group-member-item .leader-star{color:#ffc107;font-size:9px;margin-left:2px}
 /* Empty */
 .empty{text-align:center;padding:40px 20px;color:var(--text2)}
 .empty .icon{font-size:36px;margin-bottom:10px;opacity:.3}
@@ -106,15 +141,8 @@ tr:hover td{background:var(--bg3)}
 .chat-messages::-webkit-scrollbar{width:5px}
 .chat-messages::-webkit-scrollbar-track{background:transparent}
 .chat-messages::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
-.msg-row{display:flex;gap:10px;margin-bottom:14px;animation:fadeIn .2s ease}
-@keyframes fadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
-.msg-row .avatar{width:28px;height:28px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;margin-top:1px}
-.msg-row .body{flex:1;min-width:0}
-.msg-row .header{display:flex;align-items:center;gap:6px;margin-bottom:1px}
-.msg-row .name{font-size:11px;font-weight:600}
-.msg-row .time{font-size:10px;color:var(--text2);margin-left:auto}
-.msg-row .text{font-size:13px;line-height:1.55;white-space:pre-wrap;word-break:break-word;color:var(--text)}
-.msg-row.user .text{color:var(--accent2)}
+
+/* ====== Chat Container ====== */
 /* Thinking animation */
 .thinking-text{display:flex;align-items:center;gap:8px;color:var(--text2);font-size:13px}
 .dot-pulse{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--accent);animation:pulse 1.2s ease-in-out infinite}
@@ -184,8 +212,9 @@ tr:hover td{background:var(--bg3)}
     <div class="chat-header">
       <span class="session-label" id="chatSessionTitle">聊天</span>
       <span class="session-sub" id="chatSessionSub"></span>
+      <div id="chatGroupMembers" style="flex:1;min-width:0;margin:0 8px;display:none"></div>
       <div class="actions">
-        <button class="btn btn-sm" onclick="openSessionSettings()" title="会话设置" id="chatSettingsBtn" style="display:none">⚙️</button>
+        <button class="btn btn-sm" onclick="openSessionSettings()" title="群组设置" id="chatSettingsBtn" style="display:none">⚙️</button>
         <button class="btn btn-sm" onclick="openOutputsForSession()" title="查看产出文件" id="chatOutputsBtn" style="display:none">📂</button>
       </div>
     </div>
@@ -359,74 +388,77 @@ tr:hover td{background:var(--bg3)}
   </div>
 </div>
 
-<!-- ====== New Session Modal ====== -->
+<!-- ====== New Session Modal (QQ群风格) ====== -->
 <div class="modal-overlay" id="newSessionModal">
   <div class="modal">
     <div class="modal-header">
-      <h3>新建会话</h3>
+      <h3>新建群组</h3>
       <button class="modal-close" onclick="closeModal('newSessionModal')">✕</button>
     </div>
     <div class="modal-body">
       <div class="form-group">
-        <label>会话名称</label>
-        <input id="sessionName" placeholder="例如: 研究小组">
-      </div>
-      <div class="form-group">
-        <label>选择模型加入会话</label>
-        <div class="checkbox-group" id="sessionAgentCheckboxes"></div>
-        <div class="hint" id="noAgentHint" style="color:var(--accent3)">还没有模型，先去「模型管理」添加</div>
+        <label>群组名称</label>
+        <input id="sessionName" placeholder="例如: 开发小组">
       </div>
       <div class="form-group">
         <label>调度模式</label>
         <select id="sessionOrchestrator">
-          <option value="broadcast">广播 — 所有模型都回复</option>
-          <option value="direct">定向 — 用 @模型名 指定</option>
-          <option value="chain">串联 — 按顺序执行</option>
-          <option value="master">主模型 — 第一个模型分配任务</option>
-          <option value="router">路由 — 自动分析分派给最合适的模型</option>
+          <option value="broadcast">广播 — 所有角色都回复</option>
+          <option value="direct">定向 — 用 @角色名 指定</option>
+          <option value="chain">串联 — 按角色顺序执行</option>
+          <option value="master">组长 — 组长分配任务给组员</option>
+          <option value="router">路由 — 自动分析分派给最合适的角色</option>
           <option value="debate">辩论 — 各自回答后投票选最佳</option>
           <option value="workflow">工作流 — A→B→C 按顺序流水线</option>
         </select>
+      </div>
+      <div class="form-group">
+        <label>群成员</label>
+        <div id="newSessionRoleList"></div>
+        <div id="newSessionAddRole" style="margin-top:8px;">
+          <select id="newRoleAgentSelect" style="width:auto;min-width:140px;margin-right:8px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-size:13px"></select>
+          <button class="btn btn-sm" onclick="addNewSessionRole()">➕ 添加成员</button>
+        </div>
       </div>
     </div>
     <div class="modal-footer">
       <button class="btn" onclick="closeModal('newSessionModal')">取消</button>
-      <button class="btn btn-primary" onclick="submitNewSession()">创建</button>
+      <button class="btn btn-primary" onclick="submitNewSession()">创建群组</button>
     </div>
   </div>
 </div>
 
-<!-- ====== Session Settings Modal ====== -->
+<!-- ====== Session Settings Modal (QQ群风格) ====== -->
 <div class="modal-overlay" id="sessionSettingsModal">
   <div class="modal">
     <div class="modal-header">
-      <h3>会话设置</h3>
+      <h3>群组设置</h3>
       <button class="modal-close" onclick="closeModal('sessionSettingsModal')">✕</button>
     </div>
     <div class="modal-body">
       <div class="form-group">
-        <label>会话名称</label>
-        <input id="settingsSessionName" placeholder="会话名称">
-      </div>
-      <div class="form-group">
-        <label>API 模型（参与聊天的）</label>
-        <div class="checkbox-group" id="settingsApiModelCheckboxes"></div>
-      </div>
-      <div class="form-group">
-        <label>本机 Agent（执行操作的）</label>
-        <div class="checkbox-group" id="settingsCliAgentCheckboxes"></div>
+        <label>群组名称</label>
+        <input id="settingsSessionName" placeholder="群组名称">
       </div>
       <div class="form-group">
         <label>调度模式</label>
         <select id="settingsOrchestrator">
-          <option value="broadcast">广播 — 所有模型都回复</option>
-          <option value="direct">定向 — 用 @模型名 指定</option>
-          <option value="chain">串联 — 按顺序执行</option>
-          <option value="master">主模型 — 第一个模型分配任务</option>
-          <option value="router">路由 — 自动分析分派给最合适的模型</option>
+          <option value="broadcast">广播 — 所有角色都回复</option>
+          <option value="direct">定向 — 用 @角色名 指定</option>
+          <option value="chain">串联 — 按角色顺序执行</option>
+          <option value="master">组长 — 组长分配任务给组员</option>
+          <option value="router">路由 — 自动分析分派给最合适的角色</option>
           <option value="debate">辩论 — 各自回答后投票选最佳</option>
           <option value="workflow">工作流 — A→B→C 按顺序流水线</option>
         </select>
+      </div>
+      <div class="form-group">
+        <label>群成员</label>
+        <div id="settingsRoleList"></div>
+        <div id="settingsAddRole" style="margin-top:8px;">
+          <select id="settingsRoleAgentSelect" style="width:auto;min-width:140px;margin-right:8px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-size:13px"></select>
+          <button class="btn btn-sm" onclick="addSettingsRole()">➕ 添加成员</button>
+        </div>
       </div>
     </div>
     <div class="modal-footer">
@@ -470,6 +502,14 @@ function connectWS() {
 // 流式事件处理
 let streamState = { msgRowId: null, agentName: null, textBuffer: '' };
 
+// 查找角色信息
+function findRoleForAgent(agentName) {
+  if (!state.currentSessionId) return null;
+  const session = state.sessions[state.currentSessionId];
+  if (!session || !session.roles) return null;
+  return session.roles.find(r => r.agentName === agentName) || null;
+}
+
 function handleStreamEvent(event) {
   const msgs = document.getElementById('chatMessages');
 
@@ -482,7 +522,13 @@ function handleStreamEvent(event) {
     streamState.agentName = event.data.agent;
     streamState.textBuffer = '';
     streamState.msgRowId = 'msg_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
-    msgs.innerHTML += `<div class="msg-row" id="${streamState.msgRowId}"><div class="avatar" style="background:rgba(88,166,255,.15);color:var(--accent)">🤖</div><div class="body"><div class="header"><span class="name">${event.data.agent}</span><span class="time">${new Date().toLocaleTimeString()}</span></div><div class="text thinking-text"><span class="dot-pulse"></span> 思考中...</div></div></div>`;
+    const role = findRoleForAgent(event.data.agent);
+    const icon = role ? role.icon : '🤖';
+    const displayName = role ? role.title : event.data.agent;
+    const isLeader = role && role.isLeader;
+    const nameClass = isLeader ? 'class="name leader"' : 'class="name"';
+    const color = role ? 'rgba(88,166,255,.12)' : 'rgba(128,128,128,.12)';
+    msgs.innerHTML += `<div class="msg-row" id="${streamState.msgRowId}"><div class="avatar" style="background:${color}">${icon}</div><div class="body"><div class="header"><span ${nameClass}>${escHtml(displayName)}</span><span class="time">${new Date().toLocaleTimeString()}</span></div><div class="text thinking-text"><span class="dot-pulse"></span> 思考中...</div></div></div>`;
     msgs.scrollTop = msgs.scrollHeight;
   } else if (event.type === 'thinking') {
     // 思考中，啥也不做（已经在 agent_start 显示了）
@@ -881,64 +927,6 @@ async function deleteCliAgent(name) {
   } catch(e) { alert('网络错误'); }
 }
 
-// ====== Session Settings ======
-function openSessionSettings() {
-  const session = state.sessions[state.currentSessionId];
-  if (!session) return;
-
-  document.getElementById('settingsSessionName').value = session.name || '';
-
-  // API 模型复选框
-  const apiDiv = document.getElementById('settingsApiModelCheckboxes');
-  const apiAgents = Object.entries(state.agents).filter(([, a]) => a.type !== 'cli');
-  const sessionAgents = session.agents || [];
-  if (apiAgents.length === 0) {
-    apiDiv.innerHTML = '<div style="color:var(--text2);font-size:12px">暂无 API 模型</div>';
-  } else {
-    apiDiv.innerHTML = apiAgents.map(([name]) =>
-      `<label><input type="checkbox" value="${name}" ${sessionAgents.includes(name) ? 'checked' : ''}> <span>${name}</span></label>`
-    ).join('');
-  }
-
-  // CLI Agent 复选框
-  const cliDiv = document.getElementById('settingsCliAgentCheckboxes');
-  const cliAgents = Object.entries(state.agents).filter(([, a]) => a.type === 'cli');
-  if (cliAgents.length === 0) {
-    cliDiv.innerHTML = '<div style="color:var(--text2);font-size:12px">暂无本机 Agent</div>';
-  } else {
-    cliDiv.innerHTML = cliAgents.map(([name]) =>
-      `<label><input type="checkbox" value="${name}" ${sessionAgents.includes(name) ? 'checked' : ''}> <span>${name}</span></label>`
-    ).join('');
-  }
-
-  document.getElementById('settingsOrchestrator').value = session.orchestrator || 'broadcast';
-  openModal('sessionSettingsModal');
-}
-
-async function submitSessionSettings() {
-  const id = state.currentSessionId;
-  if (!id) return;
-
-  const name = document.getElementById('settingsSessionName').value.trim() || '未命名';
-  const apiModels = [...document.querySelectorAll('#settingsApiModelCheckboxes input:checked')].map(i => i.value);
-  const cliAgents = [...document.querySelectorAll('#settingsCliAgentCheckboxes input:checked')].map(i => i.value);
-  const orchestrator = document.getElementById('settingsOrchestrator').value;
-  const agents = [...apiModels, ...cliAgents];
-
-  try {
-    const res = await fetch(`/api/sessions/${id}`, {
-      method: 'PUT',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ name, agents, orchestrator }),
-    });
-    if (!res.ok) { alert('保存失败'); return; }
-    closeModal('sessionSettingsModal');
-    await loadSessions();
-    renderChatPage();
-    renderChatSidebar();
-    renderSessionTable();
-  } catch(e) { alert('网络错误'); }
-}
 function renderSessionTable() {
   const tbody = document.getElementById('sessionTableBody');
   const entries = Object.entries(state.sessions);
@@ -958,58 +946,227 @@ function renderSessionTable() {
   `).join('');
 }
 
-// 渲染聊天左侧的会话列表
+// 渲染聊天左侧的会话列表（QQ群风格）
 function renderChatSessionList() {
   const list = document.getElementById('chatSessionList');
   const entries = Object.entries(state.sessions);
   list.innerHTML = entries.length === 0
-    ? '<div style="padding:20px;text-align:center;color:var(--text2);font-size:12px">暂无会话<br>点「+」新建</div>'
-    : entries.sort((a, b) => (b[1].updatedAt||b[1].createdAt||'') > (a[1].updatedAt||a[1].createdAt||'') ? 1 : -1).map(([id, s]) => `
-    <div class="chat-session-item ${id === state.currentSessionId ? 'active' : ''}" onclick="switchToSession('${id}')">
-      <span>💬</span>
-      <span class="name">${escHtml(s.name)}</span>
+    ? '<div style="padding:20px;text-align:center;color:var(--text2);font-size:12px">暂无群组<br>点「+」新建</div>'
+    : entries.sort((a, b) => (b[1].updatedAt||b[1].createdAt||'') > (a[1].updatedAt||a[1].createdAt||'') ? 1 : -1).map(([id, s]) => {
+      const roles = s.roles || [];
+      const avatars = roles.slice(0, 5).map(r => `<div class="ga" style="background:rgba(88,166,255,.12)">${r.icon || '🤖'}</div>`).join('');
+      const overflow = roles.length > 5 ? `<div class="ga" style="background:var(--bg3);font-size:7px;color:var(--text2)">+${roles.length-5}</div>` : '';
+      return `<div class="chat-session-item ${id === state.currentSessionId ? 'active' : ''}" onclick="switchToSession('${id}')">
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:4px">
+          <span style="font-size:11px">💬</span>
+          <span class="name">${escHtml(s.name)}</span>
+        </div>
+        <div class="group-avatars">${avatars}${overflow}</div>
+      </div>
       <button class="del-btn" onclick="event.stopPropagation();deleteSession('${id}')" title="删除">✕</button>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
 }
 
-function renderSessionAgentCheckboxes() {
-  const div = document.getElementById('sessionAgentCheckboxes');
-  const entries = Object.entries(state.agents).filter(([, a]) => a.type !== 'cli');
-  if (entries.length === 0) {
-    div.innerHTML = '';
-    document.getElementById('noAgentHint').style.display = 'block';
+// ====== QQ群风格 — 角色管理 ======
+
+// 在新建/设置弹窗中打开前重建 Agent 下拉选项
+function populateAgentSelect(selectId, excludeNames = []) {
+  const sel = document.getElementById(selectId);
+  if (!sel) return;
+  const entries = Object.entries(state.agents);
+  sel.innerHTML = entries
+    .filter(([name]) => !excludeNames.includes(name))
+    .map(([name, a]) => {
+      const icon = agentIcon(name);
+      const modelLabel = a.model || a.command || '';
+      return `<option value="${name}">${icon} ${name}${modelLabel ? ' (' + escAttr(modelLabel) + ')' : ''}</option>`;
+    }).join('');
+}
+
+function agentIcon(name) {
+  const iconMap = { deepseek:'🧠', gpt:'🟢', claude:'🟣', hermes:'⚡', lobster:'🦞', openclaw:'🦞', qiwen:'🔮', qwen:'🔮', baidu:'🐻', hunyuan:'🌀', spark:'🔥', gemini:'🔷' };
+  const k = Object.keys(iconMap).find(k => name.toLowerCase().includes(k));
+  return k ? iconMap[k] : '🤖';
+}
+
+// 默认角色数据
+function defaultRoleForAgent(agentName) {
+  const iconMap = { deepseek:'🧠', gpt:'🟢', claude:'🟣', hermes:'⚡', lobster:'🦞', openclaw:'🦞', qiwen:'🔮', qwen:'🔮', baidu:'🐻', hunyuan:'🌀', spark:'🔥', gemini:'🔷' };
+  const k = Object.keys(iconMap).find(k => agentName.toLowerCase().includes(k));
+  return { agentName, title: agentName, icon: k ? iconMap[k] : '🤖', model: '', description: '', tags: [], isLeader: false };
+}
+
+// 新会话弹窗
+function openNewSession() {
+  document.getElementById('sessionName').value = '新群组 ' + new Date().toLocaleTimeString();
+  // 从所有 Agent 生成初始角色
+  const entries = Object.entries(state.agents);
+  state._newSessionRoles = entries.map(([name]) => defaultRoleForAgent(name));
+  renderNewSessionRoleList();
+  populateAgentSelect('newRoleAgentSelect', entries.map(([n]) => n));
+  openModal('newSessionModal');
+}
+
+function renderNewSessionRoleList() {
+  const list = document.getElementById('newSessionRoleList');
+  const roles = state._newSessionRoles || [];
+  if (roles.length === 0) {
+    list.innerHTML = '<div style="color:var(--text2);font-size:12px;padding:8px 0">还没有成员，从下方添加</div>';
     return;
   }
-  document.getElementById('noAgentHint').style.display = 'none';
-  div.innerHTML = entries.map(([name]) =>
-    `<label><input type="checkbox" value="${name}" checked> <span>${name}</span></label>`
-  ).join('');
+  list.innerHTML = roles.map((r, i) => renderRoleCard(r, i, 'new')).join('');
 }
 
-function openNewSession() {
-  renderSessionAgentCheckboxes();
-  document.getElementById('sessionName').value = '新会话 ' + new Date().toLocaleTimeString();
-  openModal('newSessionModal');
+function addNewSessionRole() {
+  const sel = document.getElementById('newRoleAgentSelect');
+  const name = sel.value;
+  if (!name) return;
+  if ((state._newSessionRoles || []).some(r => r.agentName === name)) return;
+  state._newSessionRoles.push(defaultRoleForAgent(name));
+  renderNewSessionRoleList();
+  populateAgentSelect('newRoleAgentSelect', state._newSessionRoles.map(r => r.agentName));
+}
+
+function removeNewSessionRole(idx) {
+  state._newSessionRoles.splice(idx, 1);
+  renderNewSessionRoleList();
+  populateAgentSelect('newRoleAgentSelect', state._newSessionRoles.map(r => r.agentName));
+}
+
+function updateNewRoleField(idx, field, value) {
+  if (field === 'isLeader') value = value === 'true';
+  state._newSessionRoles[idx][field] = value;
+}
+
+// 会话设置弹窗
+function openSessionSettings() {
+  const session = state.sessions[state.currentSessionId];
+  if (!session) return;
+  document.getElementById('settingsSessionName').value = session.name || '';
+  const roles = session.roles || (session.agents||[]).map(a => defaultRoleForAgent(a));
+  state._settingsRoles = JSON.parse(JSON.stringify(roles));
+  renderSettingsRoleList();
+  populateAgentSelect('settingsRoleAgentSelect', state._settingsRoles.map(r => r.agentName));
+  document.getElementById('settingsOrchestrator').value = session.orchestrator || 'broadcast';
+  openModal('sessionSettingsModal');
+}
+
+function renderSettingsRoleList() {
+  const list = document.getElementById('settingsRoleList');
+  const roles = state._settingsRoles || [];
+  if (roles.length === 0) {
+    list.innerHTML = '<div style="color:var(--text2);font-size:12px;padding:8px 0">还没有成员，从下方添加</div>';
+    return;
+  }
+  list.innerHTML = roles.map((r, i) => renderRoleCard(r, i, 'settings')).join('');
+}
+
+function addSettingsRole() {
+  const sel = document.getElementById('settingsRoleAgentSelect');
+  const name = sel.value;
+  if (!name) return;
+  if ((state._settingsRoles || []).some(r => r.agentName === name)) return;
+  state._settingsRoles.push(defaultRoleForAgent(name));
+  renderSettingsRoleList();
+  populateAgentSelect('settingsRoleAgentSelect', state._settingsRoles.map(r => r.agentName));
+}
+
+function removeSettingsRole(idx) {
+  state._settingsRoles.splice(idx, 1);
+  renderSettingsRoleList();
+  populateAgentSelect('settingsRoleAgentSelect', state._settingsRoles.map(r => r.agentName));
+}
+
+function updateSettingsRoleField(idx, field, value) {
+  if (field === 'isLeader') value = value === 'true';
+  state._settingsRoles[idx][field] = value;
+}
+
+// 渲染角色卡片
+function renderRoleCard(role, idx, prefix) {
+  const tagsHtml = (role.tags && role.tags.length > 0)
+    ? `<div class="role-tags">${role.tags.map(t => `<span class="role-tag">${escHtml(t)}</span>`).join('')}</div>`
+    : '';
+  const leaderBadge = role.isLeader ? '<span class="leader-badge">👑 组长</span>' : '';
+  const descHtml = role.description ? `<div style="font-size:10px;color:var(--text3);margin-top:1px">${escHtml(role.description)}</div>` : '';
+  // 查看 agent 配置来显示模型信息
+  const agentCfg = state.agents[role.agentName];
+  const modelInfo = agentCfg ? (agentCfg.model || agentCfg.command || '') : '';
+  const typeLabel = agentCfg ? (agentCfg.type === 'cli' ? '🔧' : '☁️') : '';
+
+  return `<div class="role-card">
+    <div class="role-icon" style="background:rgba(88,166,255,.12)">${role.icon || '🤖'}</div>
+    <div class="role-info">
+      <div class="role-name">${escHtml(role.title)} ${leaderBadge} <span style="font-size:9px;color:var(--text3);font-weight:400">${typeLabel} ${escHtml(modelInfo)}</span></div>
+      <div class="role-meta">@${escHtml(role.agentName)}</div>
+      ${descHtml}
+      ${tagsHtml}
+      <div class="role-edit-fields">
+        <input value="${escAttr(role.icon||'🤖')}" placeholder="头像" oninput="update${prefix==='new'?'New':'Settings'}RoleField(${idx},'icon',this.value)" style="max-width:50px">
+        <input value="${escAttr(role.title)}" placeholder="头衔" oninput="update${prefix==='new'?'New':'Settings'}RoleField(${idx},'title',this.value)">
+        <input value="${escAttr(role.description||'')}" placeholder="角色描述（可选）" oninput="update${prefix==='new'?'New':'Settings'}RoleField(${idx},'description',this.value)" style="flex:2">
+        <input value="${escAttr((role.tags||[]).join(','))}" placeholder="能力标签空格隔开" oninput="update${prefix==='new'?'New':'Settings'}RoleField(${idx},'tags',this.value.split(',').map(s=>s.trim()).filter(Boolean))" style="flex:1.5">
+        <select onchange="update${prefix==='new'?'New':'Settings'}RoleField(${idx},'isLeader',this.value)" style="max-width:80px">
+          <option value="false" ${role.isLeader?'':'selected'}>组员</option>
+          <option value="true" ${role.isLeader?'selected':''}>👑组长</option>
+        </select>
+      </div>
+    </div>
+    <div class="role-actions">
+      <button onclick="${prefix==='new'?'removeNewSessionRole':'removeSettingsRole'}(${idx})" title="移除">✕</button>
+    </div>
+  </div>`;
+}
+
+function escAttr(s) {
+  if (!s) return '';
+  return String(s).replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
 async function submitNewSession() {
   const name = document.getElementById('sessionName').value.trim() || '未命名';
-  const agents = [...document.querySelectorAll('#sessionAgentCheckboxes input:checked')].map(i => i.value);
   const orchestrator = document.getElementById('sessionOrchestrator').value;
-  if (agents.length === 0) return alert('请至少选择一个模型');
+  const roles = state._newSessionRoles || [];
+  if (roles.length === 0) return alert('请至少添加一个成员');
 
   const res = await fetch('/api/sessions', {
     method: 'POST',
     headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ name, agents, orchestrator }),
+    body: JSON.stringify({ name, roles, orchestrator }),
   });
   const session = await res.json();
   closeModal('newSessionModal');
+  delete state._newSessionRoles;
   await loadSessions();
   renderSessionTable();
   renderChatSessionList();
   switchToSession(session.id);
+}
+
+async function submitSessionSettings() {
+  const id = state.currentSessionId;
+  if (!id) return;
+  const name = document.getElementById('settingsSessionName').value.trim() || '未命名';
+  const orchestrator = document.getElementById('settingsOrchestrator').value;
+  const roles = state._settingsRoles || [];
+  if (roles.length === 0) return alert('请至少添加一个成员');
+
+  try {
+    const res = await fetch(`/api/sessions/${id}`, {
+      method: 'PUT',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ name, roles, orchestrator }),
+    });
+    if (!res.ok) { alert('保存失败'); return; }
+    closeModal('sessionSettingsModal');
+    delete state._settingsRoles;
+    await loadSessions();
+    renderChatPage();
+    renderChatSessionList();
+    renderSessionTable();
+  } catch(e) { alert('网络错误'); }
 }
 
 async function deleteSession(id) {
@@ -1047,23 +1204,46 @@ function renderChatPage() {
   }
   const session = state.sessions[state.currentSessionId];
   if (!session) { state.currentSessionId = null; renderChatPage(); renderChatSessionList(); return; }
-  
-  title.textContent = `💬 ${session.name}`;
-  sub.textContent = `${(session.agents||[]).join(', ')} · ${session.orchestrator}`;
+
+  const roles = session.roles || [];
+  const leader = roles.find(r => r.isLeader);
+  const leaderIcon = leader ? ` 👑${escHtml(leader.icon||'')}` : '';
+  title.innerHTML = `💬 ${escHtml(session.name)}${leaderIcon}`;
+  sub.textContent = `🔄 ${session.orchestrator} · ${roles.length} 位成员`;
   input.style.display = 'flex';
   document.getElementById('sendBtn').disabled = false;
   if (settingsBtn) settingsBtn.style.display = 'inline-flex';
   if (outputsBtn) outputsBtn.style.display = 'inline-flex';
 
-  // 加载消息
+  // 渲染群成员列表（顶部）
+  const membersEl = document.getElementById('chatGroupMembers');
+  if (roles.length > 0) {
+    membersEl.style.display = 'block';
+    membersEl.innerHTML = `<div class="group-member-list">${roles.map(r => {
+      const isLeader = r.isLeader ? '<span class="leader-star">👑</span>' : '';
+      return `<div class="group-member-item" title="${escAttr(r.description||r.title)}"><span class="gmi-icon" style="background:rgba(88,166,255,.12)">${r.icon||'🤖'}</span>${escHtml(r.title)}${isLeader}</div>`;
+    }).join('')}</div>`;
+  } else {
+    membersEl.style.display = 'none';
+  }
+
+  // 加载消息（QQ群风格气泡）
   fetch(`/api/sessions/${state.currentSessionId}/messages`).then(r=>r.json()).then(msgsData => {
     msgs.innerHTML = msgsData.length === 0
       ? '<div class="chat-empty"><div><div class="icon">💬</div><p>开始对话吧</p></div></div>'
       : msgsData.map(m => {
         if (m.role === 'user') {
-          return `<div class="msg-row user"><div class="avatar" style="background:rgba(63,185,80,.15);color:var(--accent2)">👤</div><div class="body"><div class="header"><span class="name">你</span><span class="time">${new Date(m.timestamp).toLocaleTimeString()}</span></div><div class="text">${escHtml(m.content)}</div></div></div>`;
+          return `<div class="msg-row user"><div class="avatar" style="background:rgba(63,185,80,.15)">👤</div><div class="body"><div class="header"><span class="name" style="color:var(--accent2)">你</span><span class="time">${m.timestamp ? new Date(m.timestamp).toLocaleTimeString() : ''}</span></div><div class="text">${escHtml(m.content)}</div></div></div>`;
         } else {
-          return `<div class="msg-row"><div class="avatar" style="background:rgba(88,166,255,.15);color:var(--accent)">🤖</div><div class="body"><div class="header"><span class="name">${m.agent||'AI'}</span><span class="time">${new Date(m.timestamp).toLocaleTimeString()}</span></div><div class="text">${escHtml(m.content)}</div></div></div>`;
+          // 找到角色信息
+          const agentName = m.agent || '';
+          const role = roles.find(r => r.agentName === agentName);
+          const icon = (role && role.icon) ? role.icon : '🤖';
+          const displayName = (role && role.title) ? role.title : agentName;
+          const isLeader = role && role.isLeader;
+          const nameClass = isLeader ? 'class="name leader"' : 'class="name"';
+          const color = role ? 'rgba(88,166,255,.12)' : 'rgba(128,128,128,.12)';
+          return `<div class="msg-row"><div class="avatar" style="background:${color}">${icon}</div><div class="body"><div class="header"><span ${nameClass}>${escHtml(displayName)}</span><span class="time">${m.timestamp ? new Date(m.timestamp).toLocaleTimeString() : ''}</span></div><div class="text">${escHtml(m.content)}</div></div></div>`;
         }
       }).join('');
     msgs.scrollTop = msgs.scrollHeight;
@@ -1097,7 +1277,7 @@ async function sendChat() {
   const msgs = document.getElementById('chatMessages');
   const empty = msgs.querySelector('.chat-empty');
   if (empty) msgs.innerHTML = '';
-  msgs.innerHTML += `<div class="msg-row user"><div class="avatar" style="background:rgba(63,185,80,.15);color:var(--accent2)">👤</div><div class="body"><div class="header"><span class="name">你</span><span class="time">${new Date().toLocaleTimeString()}</span></div><div class="text">${escHtml(text)}</div></div></div>`;
+  msgs.innerHTML += `<div class="msg-row user"><div class="avatar" style="background:rgba(63,185,80,.15)">👤</div><div class="body"><div class="header"><span class="name" style="color:var(--accent2)">你</span><span class="time">${new Date().toLocaleTimeString()}</span></div><div class="text">${escHtml(text)}</div></div></div>`;
   msgs.scrollTop = msgs.scrollHeight;
 
   document.getElementById('sendBtn').disabled = true;
