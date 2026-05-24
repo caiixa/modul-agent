@@ -209,14 +209,15 @@ tr:hover td{background:var(--bg3)}
   </div>
 </div>
 
-<!-- ====== Add Agent Modal ====== -->
+<!-- ====== Add / Edit Agent Modal ====== -->
 <div class="modal-overlay" id="addAgentModal">
   <div class="modal">
     <div class="modal-header">
-      <h3>添加模型</h3>
+      <h3 id="agentModalTitle">添加模型</h3>
       <button class="modal-close" onclick="closeModal('addAgentModal')">✕</button>
     </div>
     <div class="modal-body">
+      <input id="agentEditName" type="hidden" value="">
       <div class="form-group">
         <label>供应商</label>
         <select id="agentProvider" onchange="onProviderChange()">
@@ -236,7 +237,7 @@ tr:hover td{background:var(--bg3)}
       </div>
       <div class="form-group">
         <label>API Token / Key</label>
-        <input id="agentKey" type="password" placeholder="sk-...">
+        <input id="agentKey" type="password" placeholder="sk-...（留空则不修改）">
       </div>
       <div class="form-group" id="baseUrlGroup" style="display:none">
         <label>API 地址（自定义）</label>
@@ -250,22 +251,24 @@ tr:hover td{background:var(--bg3)}
     </div>
     <div class="modal-footer">
       <button class="btn" onclick="closeModal('addAgentModal')">取消</button>
-      <button class="btn btn-primary" onclick="submitAgent()">添加</button>
+      <button class="btn btn-primary" id="agentSubmitBtn" onclick="submitAgent()">添加</button>
     </div>
   </div>
 </div>
 
-<!-- ====== Add CLI Agent Modal ====== -->
+<!-- ====== Add / Edit CLI Agent Modal ====== -->
 <div class="modal-overlay" id="addCliAgentModal">
   <div class="modal">
     <div class="modal-header">
-      <h3>添加本机代理</h3>
+      <h3 id="cliAgentModalTitle">添加本机代理</h3>
       <button class="modal-close" onclick="closeModal('addCliAgentModal')">✕</button>
     </div>
     <div class="modal-body">
+      <input id="cliAgentEditName" type="hidden" value="">
       <div class="form-group">
         <label>显示名称</label>
         <input id="cliAgentName" placeholder="例如: hermes">
+        <div class="hint">编辑时名称不可更改</div>
       </div>
       <div class="form-group">
         <label>CLI 命令</label>
@@ -408,7 +411,10 @@ function renderAgentTable() {
       <td><span class="tag ${a.type === 'cli' ? 'tag-cli' : 'tag-api'}">${a.type}</span></td>
       <td style="font-size:12px;color:var(--text2)">${a.model}</td>
       <td style="font-size:12px;color:var(--text2)">${a.provider || '-'}</td>
-      <td><button class="btn btn-sm btn-danger" onclick="deleteAgent('${name}')">删除</button></td>
+      <td>
+        <button class="btn btn-sm" onclick="openEditAgent('${name}')" style="margin-right:4px">编辑</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteAgent('${name}')">删除</button>
+      </td>
     </tr>
   `).join('');
   // 更新会话创建页的勾选框
@@ -417,16 +423,55 @@ function renderAgentTable() {
 }
 
 function openAddAgent() {
+  document.getElementById('agentEditName').value = '';
+  document.getElementById('agentModalTitle').textContent = '添加模型';
+  document.getElementById('agentSubmitBtn').textContent = '添加';
   const sel = document.getElementById('agentProvider');
   sel.innerHTML = '<option value="">— 选择供应商 —</option>' +
     state.providers.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
   document.getElementById('agentModel').innerHTML = '<option value="">— 先选供应商 —</option>';
   document.getElementById('agentName').value = '';
+  document.getElementById('agentName').disabled = false;
   document.getElementById('agentKey').value = '';
+  document.getElementById('agentKey').placeholder = 'sk-...';
   document.getElementById('agentBaseUrl').value = '';
   document.getElementById('agentCommand').value = '';
   document.getElementById('baseUrlGroup').style.display = 'none';
   document.getElementById('cliCommandGroup').style.display = 'none';
+  openModal('addAgentModal');
+}
+
+function openEditAgent(name) {
+  const agent = state.agents[name];
+  if (!agent) return;
+  document.getElementById('agentEditName').value = name;
+  document.getElementById('agentModalTitle').textContent = '编辑模型';
+  document.getElementById('agentSubmitBtn').textContent = '保存';
+
+  // 供应商
+  const sel = document.getElementById('agentProvider');
+  sel.innerHTML = '<option value="">— 选择供应商 —</option>' +
+    state.providers.map(p => `<option value="${p.id}" ${p.id === agent.provider ? 'selected' : ''}>${p.name}</option>`).join('');
+  state.currentProvider = state.providers.find(p => p.id === agent.provider);
+
+  // 模型
+  onProviderChange();
+  document.getElementById('agentModel').value = agent.model;
+
+  // 名称（不可改）
+  document.getElementById('agentName').value = name;
+  document.getElementById('agentName').disabled = true;
+
+  // 密码框留空则不修改
+  document.getElementById('agentKey').value = '';
+  document.getElementById('agentKey').placeholder = '留空则不修改';
+
+  // baseUrl
+  document.getElementById('agentBaseUrl').value = agent.baseUrl || '';
+
+  // CLI 命令
+  document.getElementById('agentCommand').value = agent.command || '';
+
   openModal('addAgentModal');
 }
 
@@ -436,7 +481,10 @@ function onProviderChange() {
   if (!provider) return;
   const modelSel = document.getElementById('agentModel');
   modelSel.innerHTML = provider.models.map(m => `<option value="${m}">${m}</option>`).join('');
-  document.getElementById('agentName').value = provider.name.replace(/（.*）/,'').trim();
+  // 编辑模式不覆盖名称
+  if (!document.getElementById('agentEditName').value) {
+    document.getElementById('agentName').value = provider.name.replace(/（.*）/,'').trim();
+  }
   document.getElementById('baseUrlGroup').style.display = provider.id === 'custom' ? 'block' : 'none';
   document.getElementById('cliCommandGroup').style.display = provider.type === 'cli' ? 'block' : 'none';
   document.getElementById('agentBaseUrl').value = provider.defaultBaseUrl || '';
@@ -445,6 +493,7 @@ function onProviderChange() {
 }
 
 async function submitAgent() {
+  const editName = document.getElementById('agentEditName').value;
   const providerId = document.getElementById('agentProvider').value;
   const model = document.getElementById('agentModel').value;
   let name = document.getElementById('agentName').value.trim();
@@ -456,37 +505,44 @@ async function submitAgent() {
   if (!model) return alert('请选择模型');
   if (!name) name = model;
 
-  if (state.agents[name]) return alert(`名称 "${name}" 已被占用`);
+  // 新增模式检查重名
+  if (!editName && state.agents[name]) return alert(`名称 "${name}" 已被占用`);
 
   const provider = state.providers.find(p => p.id === providerId);
   const isCli = provider && provider.type === 'cli';
 
-  if (!isCli && !apiKey) return alert('API Token 不能为空');
+  if (!isCli && !apiKey && !editName) return alert('API Token 不能为空');
+  if (!isCli && editName && !apiKey) {
+    // 编辑模式留空表示不修改 key
+  }
   if (isCli && !command) return alert('CLI 命令不能为空');
 
+  // 如果是编辑且两个名称不同，得先 PUT
   const body = {
-    name,
+    name: name,
     type: isCli ? 'cli' : 'api',
     provider: providerId,
     model,
-    api_key: apiKey,
     base_url: baseUrl || (provider ? provider.defaultBaseUrl : ''),
     command,
   };
+  if (apiKey) body.api_key = apiKey;
 
   try {
-    const res = await fetch('/api/agents', {
-      method: 'POST',
+    const url = editName ? `/api/agents/${encodeURIComponent(editName)}` : '/api/agents';
+    const method = editName ? 'PUT' : 'POST';
+    const res = await fetch(url, {
+      method,
       headers: {'Content-Type':'application/json'},
       body: JSON.stringify(body),
     });
     const data = await res.json();
-    if (data.ok) {
+    if (data.ok || data.agent) {
       closeModal('addAgentModal');
       await loadAgents();
       renderAgentTable();
     } else {
-      alert(data.error || '添加失败');
+      alert(data.error || '操作失败');
     }
   } catch(e) { alert('网络错误'); }
 }
@@ -551,6 +607,7 @@ function renderCliAgentHands() {
         <strong>${name}</strong>
         <span class="tag tag-cli">CLI</span>
         <span style="font-size:11px;color:var(--text2);flex:1">${a.model}</span>
+        <button class="btn btn-sm" onclick="openEditCliAgent('${name}')" style="margin-right:4px">编辑</button>
         <button class="btn btn-sm btn-danger" onclick="deleteCliAgent('${name}')">删除</button>
       </div>
       <div style="display:flex;flex-wrap:wrap;gap:8px">
@@ -583,33 +640,53 @@ async function toggleHandBind(handName, agentName, mount) {
 }
 
 function openAddCliAgent() {
+  document.getElementById('cliAgentEditName').value = '';
+  document.getElementById('cliAgentModalTitle').textContent = '添加本机代理';
   document.getElementById('cliAgentName').value = '';
+  document.getElementById('cliAgentName').disabled = false;
   document.getElementById('cliAgentCommand').value = '';
   document.getElementById('cliAgentWorkdir').value = '';
   openModal('addCliAgentModal');
 }
 
+function openEditCliAgent(name) {
+  const agent = state.agents[name];
+  if (!agent) return;
+  document.getElementById('cliAgentEditName').value = name;
+  document.getElementById('cliAgentModalTitle').textContent = '编辑本机代理';
+  document.getElementById('cliAgentName').value = name;
+  document.getElementById('cliAgentName').disabled = true;
+  document.getElementById('cliAgentCommand').value = agent.command || '';
+  document.getElementById('cliAgentWorkdir').value = agent.workingDir || '';
+  openModal('addCliAgentModal');
+}
+
 async function submitCliAgent() {
+  const editName = document.getElementById('cliAgentEditName').value;
   const name = document.getElementById('cliAgentName').value.trim();
   const command = document.getElementById('cliAgentCommand').value.trim();
   const workdir = document.getElementById('cliAgentWorkdir').value.trim();
   if (!name) return alert('请输入代理名称');
   if (!command) return alert('请输入 CLI 命令');
-  if (state.agents[name]) return alert(`名称 "${name}" 已被占用`);
+  if (!editName && state.agents[name]) return alert(`名称 "${name}" 已被占用`);
+
+  const body = {
+    name,
+    type: 'cli',
+    command,
+    working_dir: workdir || '',
+  };
 
   try {
-    const res = await fetch('/api/agents', {
-      method: 'POST',
+    const url = editName ? `/api/agents/${encodeURIComponent(editName)}` : '/api/agents';
+    const method = editName ? 'PUT' : 'POST';
+    const res = await fetch(url, {
+      method,
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({
-        name,
-        type: 'cli',
-        command,
-        working_dir: workdir || '',
-      }),
+      body: JSON.stringify(body),
     });
     const data = await res.json();
-    if (!data.ok) { alert(data.error || '添加失败'); return; }
+    if (!data.ok && !data.agent) { alert(data.error || '操作失败'); return; }
     closeModal('addCliAgentModal');
     await Promise.all([loadAgents(), loadTools()]);
     renderHandTable();

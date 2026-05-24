@@ -5,13 +5,13 @@
     "provider": "deepseek",
     "model": "deepseek-chat",
     "apiKey": "${DEEPSEEK_API_KEY}",
-    "baseUrl": "",
+    "baseUrl": "https://api.deepseek.com",
     "command": "",
     "workingDir": "",
     "hands": [],
     "metadata": {},
     "createdAt": "2026-05-24T13:45:04.217Z",
-    "updatedAt": "2026-05-24T13:51:58.561Z"
+    "updatedAt": "2026-05-24T14:08:12.689Z"
   },
   "hermes": {
     "name": "hermes",
@@ -20,14 +20,14 @@
     "model": "",
     "apiKey": "",
     "baseUrl": "",
-    "command": "/home/nec-8/.local/bin/hermes chat -q '{input}'",
+    "command": "hermes chat -q \"{input}\"",
     "workingDir": "/home/nec-8",
     "hands": [
       "files"
     ],
     "metadata": {},
     "createdAt": "2026-05-24T13:45:04.218Z",
-    "updatedAt": "2026-05-24T13:57:51.597Z"
+    "updatedAt": "2026-05-24T14:08:12.696Z"
   },
   "lobster": {
     "name": "lobster",
