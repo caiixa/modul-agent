@@ -6,10 +6,11 @@
 
 | 概念 | 说明 |
 |------|------|
-| **Agent** | 一个模型实例（DeepSeek / Claude / Hermes / OpenClaw …） |
-| **Hand** | 能力插件（文件操作 / 网络搜索 / 命令行 / 看图 …） |
-| **Session** | 一个对话上下文，可往里拉任意 Agent |
-| **Orchestrator** | 调度器，决定谁来干活 |
+| **API 模型** | 云端大模型（DeepSeek / GPT / Claude），参与聊天思考 |
+| **本机 Agent** | 本机 CLI 程序（Hermes / OpenClaw），持有工具负责执行 |
+| **Hand** | 能力插件（文件操作 / Shell 命令 / 网络搜索等），绑定到本机 Agent |
+| **Session** | 一个对话上下文，可搭配任意 API 模型 + 本机 Agent |
+| **Orchestrator** | 调度器，决定谁来干活（广播/定向/串联/主模型） |
 
 ## 快速开始
 
@@ -17,72 +18,81 @@
 # 安装依赖
 npm install
 
-# 配置模型
-cp config/example.yaml config/my-team.yaml
-# 编辑 config/my-team.yaml，填入 API key
+# 启动 Web UI
+node interfaces/ws-server.js config/default.json
 
-# 启动 CLI
-node core/index.js config/my-team.yaml
+# 打开浏览器
+# http://localhost:18888
 ```
 
-### CLI 会话示例
+### Web UI 功能
 
-```
-> create 我的研究小组
-✅ 会话创建: a1b2c3d4
-
-> join a1b2c3d4
-📌 进入会话: 我的研究小组
-
-> send 分析 shared/data.csv 中的数据趋势
-🤔 发送: 分析 shared/data.csv 中的数据趋势
-
-  💬 deepseek: 数据趋势分析如下...
-  💬 claude: 从另一个角度看...
-```
+| 页面 | 功能 |
+|------|------|
+| **💬 聊天** | 选会话、发消息、会话设置（⚙️ 选 API 模型 + Agent） |
+| **🤖 API 模型** | 添加/删除云端大模型（DeepSeek、GPT、Claude…） |
+| **🛠️ 工具管理** | 添加/删除本机 Agent，勾选绑定 Hand 插件 |
+| **📋 会话** | 管理所有会话 |
 
 ## 架构
 
 ```
-入口（CLI / WebSocket / API）
+  用户输入（Web UI）
         │
-  Session Manager ── Agent Registry
-        │                │
-  Orchestrator ────  Hand Loader
-        │                │
-  Tool Executor ────  files / internet / shell ...
+┌───────┴────────┐
+│   API 模型      │   ← 思考、聊天的（DeepSeek / GPT）
+│   (聊天参与)     │
+└───────┬────────┘
+        │ 间接调度
+┌───────┴────────┐
+│   本机 Agent    │   ← 执行操作的（Hermes / OpenClaw）
+│   (工具执行)     │
+└───────┬────────┘
         │
-  共享文件库（/shared）
+┌───────┴────────┐
+│   Hand 插件     │   ← files / shell / internet …
+└────────────────┘
 ```
 
 ## 调度模式
 
 | 模式 | 说明 |
 |------|------|
-| `broadcast` | 消息发给所有 Agent，都回复 |
-| `direct` | `@agentName 消息` 指定发给谁 |
+| `broadcast` | 消息发给所有模型，都回复 |
+| `direct` | `@模型名 消息` 指定发给谁 |
 | `chain` | 按顺序执行，上一步输出=下一步输入 |
-| `master` | 第一个 Agent 当组长，分配任务 |
+| `master` | 第一个模型当组长，分配任务 |
+
+## 目录结构
+
+```
+hands/               # Hand 插件目录
+  files/             # 文件读写操作
+core/                # 核心引擎
+  index.js           # 入口
+  agent-registry.js  # 模型注册表
+  session-manager.js # 会话管理
+  hand-loader.js     # 插件加载器
+  tool-executor.js   # 工具执行
+  orchestrator.js    # 调度器
+adapters/            # 模型通信适配器
+  api-adapter.js     # API 模型
+  cli-adapter.js     # CLI 模型
+interfaces/          # 接入层
+  ws-server.js       # Web 服务（HTTP + WebSocket）
+  public/            # 前端页面
+    index.html       # 管理面板
+config/              # 配置文件
+  default.json       # 默认配置
+  agents.json        # 持久化的模型注册
+```
 
 ## 开发
 
 ```bash
-# 目录结构
-hands/              # 能力插件
-  files/            # 文件读写
-  internet/         # 网络搜索
-  shell/            # 命令行执行
-core/               # 核心引擎
-  index.js          # 入口
-  agent-registry.js # 模型注册表
-  session-manager.js# 会话管理
-  hand-loader.js    # 插件加载器
-  tool-executor.js  # 工具执行
-  orchestrator.js   # 调度器
-adapters/           # 模型通信适配器
-  api-adapter.js    # API 模型
-  cli-adapter.js    # CLI 模型
-interfaces/         # 接入层
-  cli.js            # 命令行
-  ws-server.js      # WebSocket
+# 添加新 Hand：在 hands/ 下创建目录 + index.js
+# 参考 hands/files/index.js
+
+# 重启服务（Ctrl+C 后）
+node interfaces/ws-server.js config/default.json
 ```
