@@ -456,7 +456,7 @@ function connectWS() {
   ws.onmessage = (e) => {
     try {
       const pkt = JSON.parse(e.data);
-      if (pkt.type === 'stream') handleStreamEvent(pkt);
+      if (pkt.type === 'stream' && pkt.event) handleStreamEvent(pkt.event);
     } catch {}
   };
 }

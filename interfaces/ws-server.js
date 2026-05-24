@@ -422,7 +422,7 @@ class ModulWebServer {
             await this.app.orchestrator.processMessageStream(sessionId, pkt.text, (event) => {
               // 只发给当前客户端
               if (ws.readyState === 1) {
-                ws.send(JSON.stringify({ type: 'stream', ...event }));
+                ws.send(JSON.stringify({ type: 'stream', event }));
               }
             });
           } catch (err) {
