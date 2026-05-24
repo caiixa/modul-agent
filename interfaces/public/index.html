@@ -114,7 +114,10 @@ tr:hover td{background:var(--bg3)}
     <span>💬</span> 聊天
   </div>
   <div class="nav-item" onclick="switchPage('agents',this)">
-    <span>🤖</span> 模型管理
+    <span>🤖</span> API模型
+  </div>
+  <div class="nav-item" onclick="switchPage('tools',this)">
+    <span>🛠️</span> 工具管理
   </div>
   <div class="nav-item" onclick="switchPage('sessions',this)">
     <span>📋</span> 会话
@@ -140,19 +143,41 @@ tr:hover td{background:var(--bg3)}
     </div>
   </div>
 
-  <!-- ====== Agents Page ====== -->
+  <!-- ====== Agents Page （API模型管理，去掉Hand） ====== -->
   <div class="page" id="pageAgents">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-      <div style="font-size:12px;color:var(--text2)">管理你的所有 AI 模型</div>
+      <div style="font-size:12px;color:var(--text2)">管理 API 大模型（DeepSeek、GPT、Claude 等）</div>
       <button class="btn btn-primary" onclick="openAddAgent()">+ 添加模型</button>
     </div>
     <div class="card">
-      <div class="card-header"><h3>已注册模型</h3></div>
+      <div class="card-header"><h3>已注册 API 模型</h3></div>
       <div class="card-body" style="padding:0">
         <table id="agentTable">
-          <thead><tr><th>名称</th><th>类型</th><th>模型</th><th>供应商</th><th>Hand</th><th style="width:80px">操作</th></tr></thead>
+          <thead><tr><th>名称</th><th>类型</th><th>模型</th><th>供应商</th><th style="width:80px">操作</th></tr></thead>
           <tbody id="agentTableBody"></tbody>
         </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== Tools Page ====== -->
+  <div class="page" id="pageTools">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <div style="font-size:12px;color:var(--text2)">管理工具插件（Hand），绑定到本机 CLI 代理</div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h3>可用工具（Hand 插件）</h3></div>
+      <div class="card-body" style="padding:0">
+        <table id="handTable">
+          <thead><tr><th>名称</th><th>描述</th><th>工具</th><th>绑定到</th></tr></thead>
+          <tbody id="handTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="card" style="margin-top:16px">
+      <div class="card-header"><h3>本机代理（CLI）</h3></div>
+      <div class="card-body" id="cliAgentHands">
+        <div class="empty"><p>暂无 CLI 类型代理</p><div class="sub">先去「API模型」页面添加 CLI 类型的模型</div></div>
       </div>
     </div>
   </div>
@@ -213,10 +238,6 @@ tr:hover td{background:var(--bg3)}
         <input id="agentCommand" placeholder='例如: hermes chat -q "{input}"'>
         <div class="hint">使用 {input} 作为用户消息占位符</div>
       </div>
-      <div class="form-group">
-        <label>能力插件（Hand）</label>
-        <div class="checkbox-group" id="handCheckboxes"></div>
-      </div>
     </div>
     <div class="modal-footer">
       <button class="btn" onclick="closeModal('addAgentModal')">取消</button>
@@ -265,7 +286,7 @@ let state = { agents: {}, sessions: {}, hands: {}, providers: [], currentSession
 
 // ====== Init ======
 async function init() {
-  await Promise.all([loadAgents(), loadHands(), loadProviders(), loadSessions()]);
+  await Promise.all([loadAgents(), loadHands(), loadProviders(), loadSessions(), loadTools()]);
   renderAgentTable();
   renderSessionTable();
   renderChatSidebar();
@@ -290,11 +311,12 @@ function switchPage(page, el) {
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   el.classList.add('active');
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  const pageMap = { chat: 'pageChat', agents: 'pageAgents', sessions: 'pageSessions' };
+  const pageMap = { chat: 'pageChat', agents: 'pageAgents', tools: 'pageTools', sessions: 'pageSessions' };
   document.getElementById(pageMap[page]).classList.add('active');
   if (page === 'chat') { renderChatPage(); document.getElementById('pageChat').style.display = 'flex'; }
   else { document.getElementById('pageChat').style.display = 'none'; }
-  document.getElementById('pageTitle').textContent = {chat:'聊天',agents:'模型管理',sessions:'会话'}[page];
+  if (page === 'tools') renderToolsPage();
+  document.getElementById('pageTitle').textContent = {chat:'聊天',agents:'API模型',tools:'工具管理',sessions:'会话'}[page];
 }
 
 // ====== Agents Management ======
@@ -302,7 +324,7 @@ function renderAgentTable() {
   const tbody = document.getElementById('agentTableBody');
   const entries = Object.entries(state.agents);
   if (entries.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="6"><div class="empty"><p>还没有注册任何模型</p><div class="sub">点右上角「添加模型」开始</div></div></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="5"><div class="empty"><p>还没有注册任何模型</p><div class="sub">点右上角「添加模型」开始</div></div></td></tr>';
     return;
   }
   tbody.innerHTML = entries.map(([name, a]) => `
@@ -311,7 +333,6 @@ function renderAgentTable() {
       <td><span class="tag ${a.type === 'cli' ? 'tag-cli' : 'tag-api'}">${a.type}</span></td>
       <td style="font-size:12px;color:var(--text2)">${a.model}</td>
       <td style="font-size:12px;color:var(--text2)">${a.provider || '-'}</td>
-      <td>${(a.hands||[]).map(h => `<span class="tag">${h}</span>`).join(' ') || '-'}</td>
       <td><button class="btn btn-sm btn-danger" onclick="deleteAgent('${name}')">删除</button></td>
     </tr>
   `).join('');
@@ -331,11 +352,6 @@ function openAddAgent() {
   document.getElementById('agentCommand').value = '';
   document.getElementById('baseUrlGroup').style.display = 'none';
   document.getElementById('cliCommandGroup').style.display = 'none';
-  // Hand 复选框
-  const handBoxes = document.getElementById('handCheckboxes');
-  handBoxes.innerHTML = Object.entries(state.hands).map(([name, h]) =>
-    `<label><input type="checkbox" value="${name}" checked> <span>${name}</span></label>`
-  ).join('');
   openModal('addAgentModal');
 }
 
@@ -360,7 +376,6 @@ async function submitAgent() {
   const apiKey = document.getElementById('agentKey').value.trim();
   const baseUrl = document.getElementById('agentBaseUrl').value.trim();
   const command = document.getElementById('agentCommand').value.trim();
-  const hands = [...document.querySelectorAll('#handCheckboxes input:checked')].map(i => i.value);
 
   if (!providerId) return alert('请选择供应商');
   if (!model) return alert('请选择模型');
@@ -382,7 +397,6 @@ async function submitAgent() {
     api_key: apiKey,
     base_url: baseUrl || (provider ? provider.defaultBaseUrl : ''),
     command,
-    hands,
   };
 
   try {
@@ -411,7 +425,85 @@ async function deleteAgent(name) {
   }
 }
 
-// ====== Sessions ======
+// ====== Tools Management ======
+let toolsData = { hands: {}, agentHands: {} };
+
+async function loadTools() {
+  try {
+    const res = await fetch('/api/tools');
+    toolsData = await res.json();
+  } catch(e) { console.error(e); }
+}
+
+function renderToolsPage() {
+  renderHandTable();
+  renderCliAgentHands();
+}
+
+function renderHandTable() {
+  const tbody = document.getElementById('handTableBody');
+  const entries = Object.entries(toolsData.hands);
+  if (entries.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="4"><div class="empty"><p>暂无可用工具</p><div class="sub">在 hands/ 目录下添加 Hand 插件</div></div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = entries.map(([name, h]) => {
+    const boundTo = Object.entries(toolsData.agentHands)
+      .filter(([, ah]) => (ah.hands||[]).includes(name))
+      .map(([an]) => an);
+    return `<tr>
+      <td><strong>${name}</strong></td>
+      <td style="font-size:12px;color:var(--text2)">${h.description || '-'}</td>
+      <td style="font-size:12px;color:var(--text2)">${(h.tools||[]).map(t => `<span class="tag">${t}</span>`).join(' ') || '-'}</td>
+      <td>${boundTo.length > 0 ? boundTo.map(an => `<span class="tag" style="border-color:var(--accent2);color:var(--accent2)">${an}</span>`).join(' ') : '<span style="color:var(--text2);font-size:11px">未绑定</span>'}</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderCliAgentHands() {
+  const div = document.getElementById('cliAgentHands');
+  // 找出所有 CLI 类型代理
+  const cliAgents = Object.entries(state.agents).filter(([, a]) => a.type === 'cli');
+  if (cliAgents.length === 0) {
+    div.innerHTML = '<div class="empty"><p>暂无 CLI 类型代理</p><div class="sub">先去「API模型」页面添加 CLI 类型的模型（如 Hermes、OpenClaw）</div></div>';
+    return;
+  }
+  div.innerHTML = cliAgents.map(([name, a]) => {
+    const hands = toolsData.agentHands[name] ? toolsData.agentHands[name].hands || [] : [];
+    return `<div style="padding:12px 0;border-bottom:1px solid var(--border)">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+        <strong>${name}</strong>
+        <span class="tag tag-cli">CLI</span>
+        <span style="font-size:11px;color:var(--text2)">${a.model}</span>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px">
+        ${Object.entries(toolsData.hands).map(([handName]) => {
+          const isBound = hands.includes(handName);
+          return `<label style="display:flex;align-items:center;gap:5px;font-size:12px;cursor:pointer;padding:4px 10px;border-radius:6px;border:1px solid ${isBound ? 'var(--accent2)' : 'var(--border)'};background:${isBound ? 'rgba(63,185,80,.08)' : 'transparent'}" onclick="toggleHandBind('${handName}','${name}',${!isBound})">
+            <input type="checkbox" ${isBound ? 'checked' : ''} style="display:none">
+            <span style="color:${isBound ? 'var(--accent2)' : 'var(--text2)'}">${handName}</span>
+          </label>`;
+        }).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function toggleHandBind(handName, agentName, mount) {
+  try {
+    const res = await fetch(`/api/tools/${encodeURIComponent(handName)}/agents/${encodeURIComponent(agentName)}`, {
+      method: 'PUT',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ action: mount ? 'mount' : 'unmount' }),
+    });
+    const data = await res.json();
+    if (!data.ok) { alert(data.error || '操作失败'); return; }
+    // 刷新数据
+    await Promise.all([loadAgents(), loadTools()]);
+    renderHandTable();
+    renderCliAgentHands();
+  } catch(e) { alert('网络错误'); }
+}
 function renderSessionTable() {
   const tbody = document.getElementById('sessionTableBody');
   const entries = Object.entries(state.sessions);

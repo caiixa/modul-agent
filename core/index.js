@@ -11,6 +11,7 @@ const ToolExecutor = require('./tool-executor.js');
 const Orchestrator = require('./orchestrator.js');
 const ApiAdapter = require('../adapters/api-adapter.js');
 const CliAdapter = require('../adapters/cli-adapter.js');
+const path = require('path');
 
 class ModulAgent {
   constructor(options = {}) {

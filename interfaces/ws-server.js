@@ -114,7 +114,7 @@ class ModulWebServer {
       return this._json(res, 200, this.app.sessions.list());
     }
 
-    // API: 获取 Hand 列表
+    // API: 获取 Hand 列表（已加载的 Hand 插件）
     if (url === '/api/hands' && method === 'GET') {
       const hands = {};
       for (const [name, hand] of this.app.hands.hands) {
@@ -125,6 +125,64 @@ class ModulWebServer {
         };
       }
       return this._json(res, 200, hands);
+    }
+
+    // API: 获取工具管理页数据（所有已注册的工具）
+    if (url === '/api/tools' && method === 'GET') {
+      const hands = {};
+      for (const [name, hand] of this.app.hands.hands) {
+        hands[name] = {
+          name: hand.name,
+          description: hand.description,
+          tools: Object.keys(hand.tools),
+        };
+      }
+      return this._json(res, 200, {
+        hands,
+        // 每个 Agent 当前挂载的 Hand
+        agentHands: this._getAgentHands(),
+      });
+    }
+
+    // API: 给 Agent 挂载/卸载 Hand
+    const agentHandMatch = url.match(/^\/api\/tools\/(.+)\/agents\/(.+)$/);
+    if (agentHandMatch && method === 'PUT') {
+      return this._parseBody(req).then(body => {
+        try {
+          const handName = decodeURIComponent(agentHandMatch[1]);
+          const agentName = decodeURIComponent(agentHandMatch[2]);
+          const action = body.action || 'mount'; // mount | unmount
+          const agent = this.app.registry.get(agentName);
+          let hands = agent.hands || [];
+          if (action === 'mount') {
+            if (!hands.includes(handName)) hands.push(handName);
+          } else {
+            hands = hands.filter(h => h !== handName);
+          }
+          this.app.registry.update(agentName, { hands });
+          return this._json(res, 200, { ok: true, agent: this.app.registry.getDetail(agentName) });
+        } catch (err) {
+          return this._json(res, 400, { error: err.message });
+        }
+      });
+    }
+
+    // API: 列出所有已注册的工具（绑定信息）
+    const toolsHandBindMatch = url.match(/^\/api\/tools\/(.+)\/agents$/);
+    if (toolsHandBindMatch && method === 'GET') {
+      try {
+        const handName = decodeURIComponent(toolsHandBindMatch[1]);
+        // 找出所有挂了此 Hand 的 Agent
+        const agents = {};
+        for (const [name, agent] of this.app.registry.agents) {
+          if ((agent.hands || []).includes(handName)) {
+            agents[name] = { name, type: agent.type, model: agent.model || agent.command };
+          }
+        }
+        return this._json(res, 200, agents);
+      } catch (err) {
+        return this._json(res, 400, { error: err.message });
+      }
     }
 
     // API: 获取会话详情
@@ -314,6 +372,18 @@ class ModulWebServer {
   }
 
   // ====== 工具 ======
+  _getAgentHands() {
+    const result = {};
+    if (this.app.registry && this.app.registry.agents) {
+      for (const [name, agent] of this.app.registry.agents) {
+        if ((agent.hands || []).length > 0) {
+          result[name] = { name, type: agent.type, model: agent.model || agent.command, hands: agent.hands };
+        }
+      }
+    }
+    return result;
+  }
+
   _getProviderTemplates() {
     return {
       providers: [

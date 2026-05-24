@@ -1,0 +1,48 @@
+{
+  "deepseek": {
+    "name": "deepseek",
+    "type": "api",
+    "provider": "deepseek",
+    "model": "deepseek-chat",
+    "apiKey": "${DEEPSEEK_API_KEY}",
+    "baseUrl": "",
+    "command": "",
+    "workingDir": "",
+    "hands": [
+      "files"
+    ],
+    "metadata": {},
+    "createdAt": "2026-05-24T13:45:04.217Z"
+  },
+  "hermes": {
+    "name": "hermes",
+    "type": "cli",
+    "provider": "",
+    "model": "",
+    "apiKey": "",
+    "baseUrl": "",
+    "command": "/home/nec-8/.local/bin/hermes chat -q '{input}'",
+    "workingDir": "/home/nec-8",
+    "hands": [
+      "files"
+    ],
+    "metadata": {},
+    "createdAt": "2026-05-24T13:45:04.218Z",
+    "updatedAt": "2026-05-24T13:45:42.823Z"
+  },
+  "lobster": {
+    "name": "lobster",
+    "type": "cli",
+    "provider": "",
+    "model": "",
+    "apiKey": "",
+    "baseUrl": "",
+    "command": "/home/nec-8/.npm-global/bin/openclaw agent --local -m '{input}' --agent main --json",
+    "workingDir": "/home/nec-8",
+    "hands": [
+      "files"
+    ],
+    "metadata": {},
+    "createdAt": "2026-05-24T13:45:04.218Z"
+  }
+}
