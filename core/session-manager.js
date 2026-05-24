@@ -216,7 +216,7 @@ class SessionManager {
 
   setOrchestrator(sessionId, mode) {
     const session = this.get(sessionId);
-    const validModes = ['broadcast', 'direct', 'chain', 'master'];
+    const validModes = ['broadcast', 'direct', 'chain', 'master', 'router', 'debate', 'workflow'];
     if (!validModes.includes(mode)) {
       throw new Error(`无效的调度模式: ${mode}，可选: ${validModes.join(', ')}`);
     }

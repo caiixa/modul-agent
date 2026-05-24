@@ -28,6 +28,9 @@ class Orchestrator {
       case 'direct':    return this._direct(session, userMessage);
       case 'chain':     return this._chain(session, userMessage);
       case 'master':    return this._masterMode(session, userMessage);
+      case 'router':    return this._routerMode(session, userMessage);
+      case 'debate':    return this._debateMode(session, userMessage);
+      case 'workflow':  return this._workflowMode(session, userMessage);
       default:          return this._broadcast(session, userMessage);
     }
   }
@@ -193,6 +196,9 @@ class Orchestrator {
   // 非流式单次 Agent 调用
   async _callAgent(session, agentName, message) {
     const agentConfig = this.agentRegistry.get(agentName);
+    // 注入 orchestrator 引用供 agent_chat 工具使用
+    session._orchestrator = this;
+
     const toolsPrompt = this.handLoader.generateToolsPrompt(agentConfig.hands);
     const history = this.sessionManager.getMessagesForAgent(session.id, agentName);
 
@@ -212,7 +218,7 @@ class Orchestrator {
     if (response.toolCalls && response.toolCalls.length > 0) {
       const toolResults = await this.toolExecutor.executeBatch(
         response.toolCalls, agentConfig.hands,
-        session.sharedDir, session.outputDir
+        session.sharedDir, session.outputDir, session
       );
       const continued = await adapter.call(agentConfig, {
         message: null, toolsPrompt,
@@ -231,7 +237,7 @@ class Orchestrator {
       if (parsedCalls.length > 0) {
         const toolResults = await this.toolExecutor.executeBatch(
           parsedCalls, agentConfig.hands,
-          session.sharedDir, session.outputDir
+          session.sharedDir, session.outputDir, session
         );
         const cleanText = this.toolExecutor.stripToolMarkers(response.text);
         finalText = cleanText + '\n\n[工具执行结果：' + JSON.stringify(toolResults) + ']';
@@ -244,6 +250,9 @@ class Orchestrator {
   // 流式单次 Agent 调用 — 通过 onEvent 推送实时文本
   async _callAgentStream(session, agentName, message, onEvent) {
     const agentConfig = this.agentRegistry.get(agentName);
+    // 注入 orchestrator 引用供 agent_chat 工具使用
+    session._orchestrator = this;
+
     const toolsPrompt = this.handLoader.generateToolsPrompt(agentConfig.hands);
     const history = this.sessionManager.getMessagesForAgent(session.id, agentName);
 
@@ -286,7 +295,7 @@ class Orchestrator {
 
       const toolResults = await this.toolExecutor.executeBatch(
         response.toolCalls, agentConfig.hands,
-        session.sharedDir, session.outputDir
+        session.sharedDir, session.outputDir, session
       );
 
       onEvent({ type: 'tool_result', data: { agent: agentName, results: toolResults } });
@@ -310,6 +319,129 @@ class Orchestrator {
     }
 
     return { text: finalText || '[无回复]' };
+  }
+
+  // ==================== 路由模式 ====================
+  async _routerMode(session, userMessage) {
+    if (session.agents.length === 0) return [];
+    const routerName = session.agents[0];
+    const workers = session.agents.slice(1);
+    if (workers.length === 0) return this._broadcast(session, userMessage);
+
+    // 用第一个模型做路由器，分析用户输入
+    const routePlan = await this._callAgent(session, routerName,
+      `你是智能路由分配器。分析用户消息，从以下助手中选择最合适的一个执行任务。\n\n` +
+      `可用助手：\n${workers.map((w, i) => `${i + 1}. ${w}`).join('\n')}\n\n` +
+      `用户消息：${userMessage}\n\n` +
+      `请根据每个助手的专长选择最匹配的助手。只回复助手名称，不要多余文字。\n` +
+      `格式：@助手名`
+    );
+
+    const targetMatch = routePlan.text.match(/@(\w[\w-]*)/);
+    const targetName = targetMatch ? targetMatch[1] : workers[0];
+
+    this.sessionManager.addMessage(session.id, {
+      role: 'assistant', agent: routerName,
+      content: `📡 智能路由：将任务分配给了 @${targetName}`,
+    });
+
+    if (!session.agents.includes(targetName)) {
+      return [{ error: `路由器选择的 "${targetName}" 不在会话中` }];
+    }
+
+    const result = await this._callAgent(session, targetName, userMessage);
+    this.sessionManager.addMessage(session.id, {
+      role: 'assistant', agent: targetName, content: result.text,
+    });
+    return [{ router: routerName, target: targetName, result }];
+  }
+
+  // ==================== 辩论模式 ====================
+  async _debateMode(session, userMessage) {
+    if (session.agents.length < 2) return this._broadcast(session, userMessage);
+
+    // 各自回答
+    const allResults = [];
+    for (const agentName of session.agents) {
+      const result = await this._callAgent(session, agentName, userMessage);
+      this.sessionManager.addMessage(session.id, {
+        role: 'assistant', agent: agentName, content: result.text,
+      });
+      allResults.push({ agent: agentName, text: result.text });
+    }
+
+    // 用第一个模型投票
+    const judgeName = session.agents[0];
+    const judgePrompt = `你是裁判。以下是多个 AI 助手对同一个问题的回答。请投票选出最佳答案并说明理由。\n\n` +
+      `问题：${userMessage}\n\n` +
+      allResults.map(r => `--- ${r.agent} 的回答 ---\n${r.text}`).join('\n\n') +
+      `\n\n请选出最佳回答，格式：\n🏆 最佳：@助手名\n理由：...`;
+
+    const judgeResult = await this._callAgent(session, judgeName, judgePrompt);
+    this.sessionManager.addMessage(session.id, {
+      role: 'assistant', agent: judgeName,
+      content: `🏆 辩论裁决：\n${judgeResult.text}`,
+    });
+
+    return { answers: allResults, verdict: { judge: judgeName, text: judgeResult.text } };
+  }
+
+  // ==================== 工作流模式 ====================
+  async _workflowMode(session, userMessage) {
+    if (session.agents.length === 0) return [];
+
+    const results = [];
+    let currentInput = userMessage;
+
+    for (let i = 0; i < session.agents.length; i++) {
+      const agentName = session.agents[i];
+      const stepMessage = (i === 0)
+        ? userMessage
+        : `上一步结果：\n${currentInput}\n\n请继续处理。` +
+          (i < session.agents.length - 1 ? ' 处理完后将结果传递给下一步。' : ' 这是最后一步，请给出完整的最终输出。');
+
+      const result = await this._callAgent(session, agentName, stepMessage);
+      currentInput = result.text;
+      this.sessionManager.addMessage(session.id, {
+        role: 'assistant', agent: agentName,
+        content: `[步骤 ${i + 1}/${session.agents.length}] ${result.text}`,
+      });
+      results.push({ agent: agentName, step: i + 1, text: result.text });
+    }
+
+    return { workflow: results, finalOutput: currentInput };
+  }
+
+  // ==================== Agent 间通信 ====================
+  // 让模型 A 向模型 B 提问，并返回 B 的回答
+  async _agentChat(session, fromAgent, toAgent, question) {
+    if (!session.agents.includes(toAgent)) {
+      return `[错误: Agent "${toAgent}" 不在当前会话中]`;
+    }
+    const result = await this._callAgent(session, toAgent,
+      `[来自 ${fromAgent} 的消息]\n${question}\n\n请直接回答。`
+    );
+    this.sessionManager.addMessage(session.id, {
+      role: 'assistant', agent: toAgent,
+      content: `💬 @${fromAgent} → @${toAgent}: ${result.text}`,
+    });
+    return result.text;
+  }
+
+  // Agent 间通信的 Hand 工具
+  getAgentChatTool() {
+    return {
+      name: 'agent_chat',
+      description: '向会话中的另一个 Agent 提问，并获取它的回答。适用于协作讨论、代码审查等场景。',
+      parameters: {
+        target_agent: { type: 'string', description: '目标 Agent 名称（必须在这个会话中）' },
+        question: { type: 'string', description: '你要问的问题或讨论的内容' },
+      },
+      execute: async ({ target_agent, question }, { sharedDir }) => {
+        // 运行时从 orchestrator 获取
+        // execute 由 tool-executor 调用，通过闭包注入 session
+      },
+    };
   }
 }
 

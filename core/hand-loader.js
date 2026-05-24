@@ -39,6 +39,12 @@ class HandLoader {
       }
       this.hands.set(hand.name, hand);
       console.log(`[HandLoader]   ├─ ${hand.name}: ${Object.keys(hand.tools).length} 个工具`);
+      // 如果 Hand 有 init 方法，异步初始化
+      if (typeof hand.init === 'function') {
+        hand.init().catch(err => {
+          console.error(`[HandLoader] ⚠️ ${hand.name} init 失败: ${err.message}`);
+        });
+      }
     } catch (err) {
       console.error(`[HandLoader] ❌ 加载 Hand "${name}" 失败:`, err.message);
     }

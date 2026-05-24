@@ -1,10 +1,7 @@
 // ============================================================
-// Tool Executor — 工具执行引擎
+// Tool Executor — 工具执行器
 // ============================================================
-// 解析模型的工具调用请求，找到对应的 Hand 并执行
-// 支持两种模式：
-//   1. 原生 Function Calling（DeepSeek/GPT/Claude）
-//   2. 文本指令解析（不支持 function calling 的模型）
+// 根据模型返回的 tool_calls，找到对应 Hand 并执行
 // ============================================================
 
 class ToolExecutor {
@@ -14,11 +11,14 @@ class ToolExecutor {
 
   // 执行一次工具调用
   // toolCall: { name: "read_file", arguments: { path: "/tmp/x" } }
-  async execute(toolCall, agentHands, sharedDir, outputDir) {
+  async execute(toolCall, agentHands, sharedDir, outputDir, session) {
     const toolName = toolCall.name || toolCall.action;
     const params = toolCall.arguments || toolCall.parameters || {};
     if (sharedDir) params.sharedDir = sharedDir;
     if (outputDir) params.outputDir = outputDir;
+    if (session) {
+      params.session = session;
+    }
 
     // 查找这个工具属于哪个 Hand
     const handName = this.handLoader.findHandForTool(toolName);
@@ -60,41 +60,41 @@ class ToolExecutor {
   }
 
   // 执行多个工具调用（一个模型回复可能包含多次工具调用）
-  async executeBatch(toolCalls, agentHands, sharedDir, outputDir) {
+  async executeBatch(toolCalls, agentHands, sharedDir, outputDir, session) {
     const results = [];
     for (const call of toolCalls) {
-      const result = await this.execute(call, agentHands, sharedDir, outputDir);
+      const result = await this.execute(call, agentHands, sharedDir, outputDir, session);
       results.push(result);
     }
     return results;
   }
 
-  // 解析不支持 function calling 的模型输出的文本指令
-  // 格式：[TOOL] 工具名(参数JSON) [/TOOL]
-  // 例如：[TOOL] read_file({"path":"data.txt"}) [/TOOL]
+  // 从文本中解析工具调用标记（兼容非 tool_calls 的模型）
   parseTextToolCalls(text) {
-    const pattern = /\[TOOL\]\s*(\w+)\s*\(\s*({.*?})\s*\)\s*\[\/TOOL\]/gs;
     const calls = [];
+    const regex = /```tool_call\s*\n({[\s\S]*?})\n```/g;
     let match;
-
-    while ((match = pattern.exec(text)) !== null) {
+    while ((match = regex.exec(text)) !== null) {
       try {
-        calls.push({
-          name: match[1],
-          arguments: JSON.parse(match[2]),
-        });
-      } catch {
-        // 解析失败，跳过
-        console.warn(`[ToolExec] ⚠️ 解析工具调用失败: ${match[0]}`);
-      }
+        calls.push(JSON.parse(match[1]));
+      } catch {}
     }
-
     return calls;
   }
 
-  // 清洗文本中的工具调用标记（返回纯文本）
+  // 从文本中移除工具调用标记
   stripToolMarkers(text) {
-    return text.replace(/\[TOOL\].*?\[\/TOOL\]/gs, '').trim();
+    return text.replace(/```tool_call\s*\n{[\s\S]*?}\n```/g, '').trim();
+  }
+
+  // 查找工具所属的 Hand 名称
+  findHandForTool(toolName) {
+    for (const [handName, hand] of this.handLoader.hands) {
+      if (hand.tools && hand.tools[toolName]) {
+        return handName;
+      }
+    }
+    return null;
   }
 }
 
