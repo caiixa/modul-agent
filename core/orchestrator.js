@@ -262,6 +262,7 @@ class Orchestrator {
     }
 
     // API 流式调用
+    adapter = this.adapters.api;
     const response = await adapter.callStream(agentConfig, {
       message, toolsPrompt, history,
       sharedDir: session.sharedDir, outputDir: session.outputDir,
