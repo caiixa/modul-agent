@@ -1,0 +1,25 @@
+agents:
+  deepseek:
+    type: api
+    provider: deepseek
+    model: deepseek-chat
+    api_key: "${DEEPSEEK_API_KEY}"
+    hands:
+      - files
+      - internet
+
+  claude:
+    type: api
+    provider: anthropic
+    model: claude-sonnet-4
+    api_key: "${ANTHROPIC_API_KEY}"
+    hands:
+      - files
+      - vision
+
+  hermes:
+    type: cli
+    command: "hermes chat -q '{input}'"
+    hands:
+      - files
+      - shell

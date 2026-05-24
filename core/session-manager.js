@@ -1,0 +1,166 @@
+// ============================================================
+// Session Manager — 会话管理器
+// ============================================================
+// 管理多个独立会话，每个会话包含参与模型、消息历史和共享目录
+// ============================================================
+
+const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
+
+class SessionManager {
+  constructor({ sharedRoot = './shared' } = {}) {
+    this.sessions = new Map(); // sessionId -> Session
+    this.sharedRoot = path.resolve(sharedRoot);
+    // 确保共享目录存在
+    if (!fs.existsSync(this.sharedRoot)) {
+      fs.mkdirSync(this.sharedRoot, { recursive: true });
+    }
+  }
+
+  // 创建会话
+  create({ name, agents = [], orchestrator = 'broadcast', sharedDir = '' } = {}) {
+    const id = this._genId();
+    const session = {
+      id,
+      name: name || `session-${id.slice(0, 8)}`,
+      agents: [...agents],           // Agent 名称列表
+      orchestrator,                   // broadcast | direct | chain | master
+      messages: [],                   // 消息历史
+      sharedDir: sharedDir || path.join(this.sharedRoot, id),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      metadata: {},
+    };
+
+    // 确保会话的共享目录存在
+    if (!fs.existsSync(session.sharedDir)) {
+      fs.mkdirSync(session.sharedDir, { recursive: true });
+    }
+
+    this.sessions.set(id, session);
+    console.log(`[Session] ✅ 会话 "${session.name}" (${id}) 已创建`);
+    return session;
+  }
+
+  // 获取会话
+  get(id) {
+    if (!this.sessions.has(id)) {
+      throw new Error(`会话 "${id}" 不存在`);
+    }
+    return this.sessions.get(id);
+  }
+
+  // 删除会话
+  delete(id) {
+    if (!this.sessions.has(id)) return false;
+    this.sessions.delete(id);
+    console.log(`[Session] 🗑️ 会话 "${id}" 已删除`);
+    return true;
+  }
+
+  // 列出所有会话
+  list() {
+    const result = {};
+    for (const [id, session] of this.sessions) {
+      result[id] = {
+        id,
+        name: session.name,
+        agents: session.agents,
+        orchestrator: session.orchestrator,
+        messageCount: session.messages.length,
+        createdAt: session.createdAt,
+      };
+    }
+    return result;
+  }
+
+  // 添加模型到会话
+  addAgent(sessionId, agentName) {
+    const session = this.get(sessionId);
+    if (session.agents.includes(agentName)) {
+      console.log(`[Session] ⚠️ Agent "${agentName}" 已在会话中`);
+      return session;
+    }
+    session.agents.push(agentName);
+    session.updatedAt = new Date().toISOString();
+    console.log(`[Session] ➕ Agent "${agentName}" 加入会话 "${session.name}"`);
+    return session;
+  }
+
+  // 从会话移除模型
+  removeAgent(sessionId, agentName) {
+    const session = this.get(sessionId);
+    session.agents = session.agents.filter(a => a !== agentName);
+    session.updatedAt = new Date().toISOString();
+    console.log(`[Session] ➖ Agent "${agentName}" 离开会话 "${session.name}"`);
+    return session;
+  }
+
+  // 添加消息到会话
+  addMessage(sessionId, message) {
+    const session = this.get(sessionId);
+    const msg = {
+      id: session.messages.length + 1,
+      role: message.role || 'user',
+      agent: message.agent || null,   // 哪个 Agent 发的
+      content: message.content || '',
+      toolCalls: message.toolCalls || null,
+      toolResults: message.toolResults || null,
+      timestamp: new Date().toISOString(),
+    };
+    session.messages.push(msg);
+    session.updatedAt = new Date().toISOString();
+
+    // 限制历史长度（防止内存爆炸）
+    if (session.messages.length > 500) {
+      session.messages.splice(0, session.messages.length - 500);
+    }
+
+    return msg;
+  }
+
+  // 获取会话最近 N 条消息
+  getRecentMessages(sessionId, limit = 50) {
+    const session = this.get(sessionId);
+    return session.messages.slice(-limit);
+  }
+
+  // 获取某 Agent 在会话中看到的历史（排除其他 Agent 的工具调用细节）
+  getMessagesForAgent(sessionId, agentName) {
+    const session = this.get(sessionId);
+    return session.messages.map(m => {
+      // 给模型看的信息，过滤掉不必要的工具内部细节
+      const msg = {
+        role: m.role,
+        agent: m.agent,
+        content: m.content,
+      };
+      return msg;
+    });
+  }
+
+  // 设置会话 orcherstrator 模式
+  setOrchestrator(sessionId, mode) {
+    const session = this.get(sessionId);
+    const validModes = ['broadcast', 'direct', 'chain', 'master'];
+    if (!validModes.includes(mode)) {
+      throw new Error(`无效的调度模式: ${mode}，可选: ${validModes.join(', ')}`);
+    }
+    session.orchestrator = mode;
+    session.updatedAt = new Date().toISOString();
+    return session;
+  }
+
+  // 获取会话共享目录路径
+  getSharedDir(sessionId) {
+    const session = this.get(sessionId);
+    return session.sharedDir;
+  }
+
+  _genId() {
+    return crypto.randomBytes(8).toString('hex');
+  }
+}
+
+module.exports = SessionManager;

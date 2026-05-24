@@ -1,0 +1,17 @@
+{
+  "name": "modul-agent",
+  "version": "0.1.0",
+  "description": "多模型协作运行时 — 让多个大模型在共享文件库上协同工作",
+  "main": "core/index.js",
+  "scripts": {
+    "start": "node core/index.js",
+    "chat": "node interfaces/cli.js",
+    "server": "node interfaces/ws-server.js"
+  },
+  "dependencies": {
+    "ws": "^8.21.0"
+  },
+  "keywords": ["multi-llm", "agent", "orchestration", "framework"],
+  "license": "MIT",
+  "author": "Orange"
+}

@@ -1,0 +1,23 @@
+{
+  "agents": {
+    "deepseek": {
+      "type": "api",
+      "provider": "deepseek",
+      "model": "deepseek-chat",
+      "api_key": "${DEEPSEEK_API_KEY}",
+      "hands": ["files"]
+    },
+    "hermes": {
+      "type": "cli",
+      "command": "/home/nec-8/.local/bin/hermes chat -q '{input}'",
+      "working_dir": "/home/nec-8",
+      "hands": ["files"]
+    },
+    "lobster": {
+      "type": "cli",
+      "command": "/home/nec-8/.npm-global/bin/openclaw agent --local -m '{input}' --agent main --json",
+      "working_dir": "/home/nec-8",
+      "hands": ["files"]
+    }
+  }
+}
