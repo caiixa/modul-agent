@@ -279,6 +279,19 @@ class ModulWebServer {
       });
     }
 
+    // API: 更新会话
+    const updateSessionMatch = url.match(/^\/api\/sessions\/([a-f0-9]+)$/);
+    if (updateSessionMatch && method === 'PUT') {
+      return this._parseBody(req).then(body => {
+        try {
+          const session = this.app.sessions.update(updateSessionMatch[1], body);
+          return this._json(res, 200, session);
+        } catch (err) {
+          return this._json(res, 500, { error: err.message });
+        }
+      });
+    }
+
     // API: 读取共享文件
     if (url.startsWith('/api/files/read') && method === 'GET') {
       const filePath = url.replace('/api/files/read?path=', '');

@@ -132,11 +132,12 @@ tr:hover td{background:var(--bg3)}
 
   <!-- ====== Chat Page ====== -->
   <div class="page active" id="pageChat" style="display:flex;flex-direction:column;height:100%">
-    <div style="display:flex;align-items:center;gap:8px;padding:8px 16px;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0">
+    <div style="display:flex;align-items:center;gap:6px;padding:8px 16px;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0">
       <select id="chatSessionSelect" style="flex:1;padding:6px 10px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:12px;font-family:inherit;outline:none;cursor:pointer"
         onchange="switchToSession(this.value)">
         <option value="">— 选择会话 —</option>
       </select>
+      <button class="btn btn-sm" onclick="openSessionSettings()" title="会话设置" id="chatSettingsBtn" style="display:none;font-size:14px">⚙️</button>
       <button class="btn btn-sm btn-primary" onclick="openNewSession()" title="新建会话">+ 新建</button>
     </div>
     <div class="chat-messages" id="chatMessages">
@@ -313,6 +314,43 @@ tr:hover td{background:var(--bg3)}
     <div class="modal-footer">
       <button class="btn" onclick="closeModal('newSessionModal')">取消</button>
       <button class="btn btn-primary" onclick="submitNewSession()">创建</button>
+    </div>
+  </div>
+</div>
+
+<!-- ====== Session Settings Modal ====== -->
+<div class="modal-overlay" id="sessionSettingsModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>会话设置</h3>
+      <button class="modal-close" onclick="closeModal('sessionSettingsModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>会话名称</label>
+        <input id="settingsSessionName" placeholder="会话名称">
+      </div>
+      <div class="form-group">
+        <label>API 模型（参与聊天的）</label>
+        <div class="checkbox-group" id="settingsApiModelCheckboxes"></div>
+      </div>
+      <div class="form-group">
+        <label>本机 Agent（执行操作的）</label>
+        <div class="checkbox-group" id="settingsCliAgentCheckboxes"></div>
+      </div>
+      <div class="form-group">
+        <label>调度模式</label>
+        <select id="settingsOrchestrator">
+          <option value="broadcast">广播 — 所有模型都回复</option>
+          <option value="direct">定向 — 用 @模型名 指定</option>
+          <option value="chain">串联 — 按顺序执行</option>
+          <option value="master">主模型 — 第一个模型分配任务</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('sessionSettingsModal')">取消</button>
+      <button class="btn btn-primary" onclick="submitSessionSettings()">保存</button>
     </div>
   </div>
 </div>
@@ -589,6 +627,65 @@ async function deleteCliAgent(name) {
     renderCliAgentHands();
   } catch(e) { alert('网络错误'); }
 }
+
+// ====== Session Settings ======
+function openSessionSettings() {
+  const session = state.sessions[state.currentSessionId];
+  if (!session) return;
+
+  document.getElementById('settingsSessionName').value = session.name || '';
+
+  // API 模型复选框
+  const apiDiv = document.getElementById('settingsApiModelCheckboxes');
+  const apiAgents = Object.entries(state.agents).filter(([, a]) => a.type !== 'cli');
+  const sessionAgents = session.agents || [];
+  if (apiAgents.length === 0) {
+    apiDiv.innerHTML = '<div style="color:var(--text2);font-size:12px">暂无 API 模型</div>';
+  } else {
+    apiDiv.innerHTML = apiAgents.map(([name]) =>
+      `<label><input type="checkbox" value="${name}" ${sessionAgents.includes(name) ? 'checked' : ''}> <span>${name}</span></label>`
+    ).join('');
+  }
+
+  // CLI Agent 复选框
+  const cliDiv = document.getElementById('settingsCliAgentCheckboxes');
+  const cliAgents = Object.entries(state.agents).filter(([, a]) => a.type === 'cli');
+  if (cliAgents.length === 0) {
+    cliDiv.innerHTML = '<div style="color:var(--text2);font-size:12px">暂无本机 Agent</div>';
+  } else {
+    cliDiv.innerHTML = cliAgents.map(([name]) =>
+      `<label><input type="checkbox" value="${name}" ${sessionAgents.includes(name) ? 'checked' : ''}> <span>${name}</span></label>`
+    ).join('');
+  }
+
+  document.getElementById('settingsOrchestrator').value = session.orchestrator || 'broadcast';
+  openModal('sessionSettingsModal');
+}
+
+async function submitSessionSettings() {
+  const id = state.currentSessionId;
+  if (!id) return;
+
+  const name = document.getElementById('settingsSessionName').value.trim() || '未命名';
+  const apiModels = [...document.querySelectorAll('#settingsApiModelCheckboxes input:checked')].map(i => i.value);
+  const cliAgents = [...document.querySelectorAll('#settingsCliAgentCheckboxes input:checked')].map(i => i.value);
+  const orchestrator = document.getElementById('settingsOrchestrator').value;
+  const agents = [...apiModels, ...cliAgents];
+
+  try {
+    const res = await fetch(`/api/sessions/${id}`, {
+      method: 'PUT',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ name, agents, orchestrator }),
+    });
+    if (!res.ok) { alert('保存失败'); return; }
+    closeModal('sessionSettingsModal');
+    await loadSessions();
+    renderChatPage();
+    renderChatSidebar();
+    renderSessionTable();
+  } catch(e) { alert('网络错误'); }
+}
 function renderSessionTable() {
   const tbody = document.getElementById('sessionTableBody');
   const entries = Object.entries(state.sessions);
@@ -675,9 +772,11 @@ function renderChatSidebar() {
 function renderChatPage() {
   const msgs = document.getElementById('chatMessages');
   const input = document.getElementById('chatInput');
+  const settingsBtn = document.getElementById('chatSettingsBtn');
   if (!state.currentSessionId) {
     msgs.innerHTML = '<div class="empty"><div class="icon">💬</div><p>从「会话」页面选择一个会话</p><div class="sub">或者创建一个新的</div></div>';
     input.style.display = 'none';
+    if (settingsBtn) settingsBtn.style.display = 'none';
     document.getElementById('pageSub').textContent = '';
     return;
   }
@@ -686,6 +785,7 @@ function renderChatPage() {
   document.getElementById('pageSub').textContent = `${session.name} · ${(session.agents||[]).join(', ')}`;
   input.style.display = 'flex';
   document.getElementById('sendBtn').disabled = false;
+  if (settingsBtn) settingsBtn.style.display = 'inline-flex';
 
   // 加载消息
   fetch(`/api/sessions/${state.currentSessionId}/messages`).then(r=>r.json()).then(msgsData => {

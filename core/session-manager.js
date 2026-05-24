@@ -141,6 +141,18 @@ class SessionManager {
   }
 
   // 设置会话 orcherstrator 模式
+  update(sessionId, data) {
+    if (!this.sessions.has(sessionId)) {
+      throw new Error(`会话 ${sessionId} 不存在`);
+    }
+    const session = this.sessions.get(sessionId);
+    if (data.name) session.name = data.name;
+    if (data.agents) session.agents = data.agents;
+    if (data.orchestrator) session.orchestrator = data.orchestrator;
+    session.updatedAt = new Date().toISOString();
+    return { ...session, messageCount: session.messages.length };
+  }
+
   setOrchestrator(sessionId, mode) {
     const session = this.get(sessionId);
     const validModes = ['broadcast', 'direct', 'chain', 'master'];
