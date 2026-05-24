@@ -322,7 +322,7 @@ function switchPage(page, el) {
 // ====== Agents Management ======
 function renderAgentTable() {
   const tbody = document.getElementById('agentTableBody');
-  const entries = Object.entries(state.agents);
+  const entries = Object.entries(state.agents).filter(([, a]) => a.type !== 'cli');
   if (entries.length === 0) {
     tbody.innerHTML = '<tr><td colspan="5"><div class="empty"><p>还没有注册任何模型</p><div class="sub">点右上角「添加模型」开始</div></div></td></tr>';
     return;
@@ -526,7 +526,7 @@ function renderSessionTable() {
 
 function renderSessionAgentCheckboxes() {
   const div = document.getElementById('sessionAgentCheckboxes');
-  const entries = Object.entries(state.agents);
+  const entries = Object.entries(state.agents).filter(([, a]) => a.type !== 'cli');
   if (entries.length === 0) {
     div.innerHTML = '';
     document.getElementById('noAgentHint').style.display = 'block';
