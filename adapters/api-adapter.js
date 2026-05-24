@@ -68,9 +68,16 @@ class ApiAdapter {
 
   _resolveProvider(agentConfig) {
     if (agentConfig.baseUrl) {
+      // baseUrl 可能已经包含路径（如 dashscope.aliyuncs.com/compatible-mode/v1）
+      // 所以要正确处理拼接
+      let baseUrl = agentConfig.baseUrl.replace(/\/+$/, '');
+      // 检查是否已有 /chat/completions 后缀
+      if (!baseUrl.endsWith('/chat/completions')) {
+        baseUrl += '/chat/completions';
+      }
       return {
-        baseUrl: agentConfig.baseUrl,
-        chatPath: '/v1/chat/completions',
+        baseUrl,
+        chatPath: '',
       };
     }
     return this.providers[agentConfig.provider] || this.providers.openai;
@@ -137,16 +144,21 @@ class ApiAdapter {
 
   _request(provider, apiKey, body) {
     return new Promise((resolve, reject) => {
-      const url = new URL(provider.chatPath, provider.baseUrl);
-      const isHttps = url.protocol === 'https:';
+      let requestUrl;
+      if (provider.chatPath) {
+        requestUrl = new URL(provider.chatPath, provider.baseUrl);
+      } else {
+        requestUrl = new URL(provider.baseUrl);
+      }
+      const isHttps = requestUrl.protocol === 'https:';
       const lib = isHttps ? https : http;
 
       const postData = JSON.stringify(body);
 
       const options = {
-        hostname: url.hostname,
-        port: url.port || (isHttps ? 443 : 80),
-        path: url.pathname + url.search,
+        hostname: requestUrl.hostname,
+        port: requestUrl.port || (isHttps ? 443 : 80),
+        path: requestUrl.pathname + requestUrl.search,
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
