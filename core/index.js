@@ -21,7 +21,9 @@ class ModulAgent {
     };
 
     // 初始化组件
-    this.registry = new AgentRegistry();
+    this.registry = new AgentRegistry({
+      persistPath: path.join(__dirname, '..', 'config', 'agents.json'),
+    });
     this.sessions = new SessionManager({ sharedRoot: this.options.sharedRoot });
     this.hands = new HandLoader(this.options.handsDir);
     this.tools = new ToolExecutor(this.hands);

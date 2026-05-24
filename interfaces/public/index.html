@@ -5,672 +5,576 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Modul Agent · 多模型协作控制台</title>
 <style>
-/* ====== Reset & Base ====== */
 *{margin:0;padding:0;box-sizing:border-box}
 :root{
-  --bg:#0d1117;
-  --bg2:#161b22;
-  --bg3:#1c2333;
-  --border:#30363d;
-  --text:#e6edf3;
-  --text2:#8b949e;
-  --accent:#58a6ff;
-  --accent2:#3fb950;
-  --accent3:#d29922;
-  --danger:#f85149;
-  --purple:#bc8cff;
-  --radius:8px;
-  --shadow:0 1px 3px rgba(0,0,0,.3);
+  --bg:#0d1117;--bg2:#161b22;--bg3:#1c2333;--border:#30363d;
+  --text:#e6edf3;--text2:#8b949e;--accent:#58a6ff;--accent2:#3fb950;
+  --accent3:#d29922;--danger:#f85149;--purple:#bc8cff;--radius:8px;
 }
-body{
-  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helvetica,Arial,sans-serif;
-  background:var(--bg);color:var(--text);height:100vh;overflow:hidden;
-  display:flex;
-}
-
-/* ====== Sidebar ====== */
-.sidebar{
-  width:260px;background:var(--bg2);border-right:1px solid var(--border);
-  display:flex;flex-direction:column;flex-shrink:0;
-}
-.sidebar-header{
-  padding:16px 20px;border-bottom:1px solid var(--border);
-  display:flex;align-items:center;gap:10px;
-}
-.sidebar-header .logo{
-  width:32px;height:32px;border-radius:6px;
-  background:linear-gradient(135deg,#58a6ff,#bc8cff);
-  display:flex;align-items:center;justify-content:center;
-  font-size:16px;font-weight:700;color:#fff;
-}
-.sidebar-header h1{font-size:15px;font-weight:600}
-.sidebar-header .ver{font-size:10px;color:var(--text2);margin-top:-1px}
-
-.sidebar-section{padding:12px 16px 4px}
-.sidebar-section .sec-title{
-  font-size:11px;font-weight:600;color:var(--text2);
-  text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;
-}
-
-.sidebar-item{
-  display:flex;align-items:center;gap:10px;
-  padding:8px 12px;border-radius:var(--radius);cursor:pointer;
-  font-size:13px;color:var(--text2);transition:all .15s;
-  margin-bottom:2px;
-}
-.sidebar-item:hover{background:var(--bg3);color:var(--text)}
-.sidebar-item.active{background:var(--bg3);color:var(--text);font-weight:500}
-.sidebar-item .icon{width:20px;text-align:center;font-size:14px}
-.sidebar-item .badge{
-  margin-left:auto;font-size:10px;padding:1px 6px;border-radius:10px;
-  background:var(--accent);color:#fff;
-}
-.sidebar-item .badge.green{background:var(--accent2)}
-.sidebar-item .badge.orange{background:var(--accent3)}
-
-.new-btn{
-  margin:8px 12px;padding:7px;border-radius:var(--radius);
-  border:1px dashed var(--border);background:transparent;
-  color:var(--text2);font-size:12px;cursor:pointer;text-align:center;
-  transition:all .15s;
-}
-.new-btn:hover{border-color:var(--accent);color:var(--accent);background:rgba(88,166,255,.08)}
-
-/* ====== Main ====== */
-.main{
-  flex:1;display:flex;flex-direction:column;overflow:hidden;
-}
-
-/* Top Bar */
-.topbar{
-  display:flex;align-items:center;gap:12px;
-  padding:12px 24px;border-bottom:1px solid var(--border);
-  background:var(--bg2);flex-shrink:0;
-}
-.topbar .session-info{flex:1}
-.topbar .session-name{font-size:16px;font-weight:600}
-.topbar .session-meta{font-size:11px;color:var(--text2);margin-top:2px}
-.topbar .controls{display:flex;gap:8px;align-items:center}
-
-.orchestrator-select{
-  background:var(--bg3);color:var(--text);border:1px solid var(--border);
-  border-radius:var(--radius);padding:5px 10px;font-size:12px;cursor:pointer;
-}
-.orchestrator-select:focus{outline:none;border-color:var(--accent)}
-
-.tag{
-  display:inline-flex;align-items:center;gap:4px;
-  padding:2px 10px;border-radius:12px;font-size:11px;
-  cursor:pointer;transition:all .15s;
-  border:1px solid var(--border);color:var(--text2);
-}
-.tag:hover{border-color:var(--accent);color:var(--accent)}
-.tag .remove{font-size:12px;opacity:.6;margin-left:2px}
-.tag .remove:hover{opacity:1;color:var(--danger)}
-
-/* ====== Content Area ====== */
-.content{
-  flex:1;display:flex;overflow:hidden;
-}
-
-/* Chat Panel */
-.chat-panel{
-  flex:1;display:flex;flex-direction:column;overflow:hidden;
-}
-.messages{
-  flex:1;overflow-y:auto;padding:16px 24px;
-}
-.messages::-webkit-scrollbar{width:6px}
-.messages::-webkit-scrollbar-track{background:transparent}
-.messages::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
-
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden;display:flex}
+/* Sidebar */
+.sidebar{width:240px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0}
+.sidebar-header{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.sidebar-header .logo{width:30px;height:30px;border-radius:6px;background:linear-gradient(135deg,#58a6ff,#bc8cff);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#fff}
+.sidebar-header h1{font-size:14px;font-weight:600}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 16px;cursor:pointer;font-size:13px;color:var(--text2);transition:all .1s;border-left:2px solid transparent}
+.nav-item:hover{background:var(--bg3);color:var(--text)}
+.nav-item.active{background:var(--bg3);color:var(--text);border-left-color:var(--accent);font-weight:500}
+.nav-item .badge{margin-left:auto;font-size:10px;padding:1px 6px;border-radius:10px;background:var(--accent);color:#fff;min-width:18px;text-align:center}
+/* Main */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{display:flex;align-items:center;gap:12px;padding:10px 24px;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0}
+.topbar h2{font-size:15px;font-weight:600}
+.topbar .sub{font-size:11px;color:var(--text2);margin-left:8px}
+/* Content */
+.content{flex:1;overflow-y:auto;padding:20px 24px}
+.content::-webkit-scrollbar{width:6px}
+.content::-webkit-scrollbar-track{background:transparent}
+.content::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+/* Page management */
+.page{display:none}
+.page.active{display:block}
+/* Cards */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:16px}
+.card-header{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.card-header h3{font-size:13px;font-weight:600}
+.card-body{padding:14px 16px}
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:var(--radius);font-size:12px;cursor:pointer;border:1px solid var(--border);background:var(--bg3);color:var(--text);transition:all .15s}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn-primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn-primary:hover{opacity:.85;color:#fff}
+.btn-danger{color:var(--danger);border-color:var(--danger)}
+.btn-danger:hover{background:rgba(248,81,73,.1)}
+.btn-sm{padding:3px 10px;font-size:11px}
+/* Table */
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{padding:8px 12px;text-align:left;color:var(--text2);font-weight:500;border-bottom:1px solid var(--border);font-size:11px;text-transform:uppercase}
+td{padding:10px 12px;border-bottom:1px solid var(--border);color:var(--text)}
+tr:hover td{background:var(--bg3)}
+.tag{display:inline-flex;align-items:center;gap:3px;padding:1px 7px;border-radius:10px;font-size:10px;background:var(--bg3);border:1px solid var(--border);color:var(--text2)}
+.tag-api{border-color:var(--accent2);color:var(--accent2)}
+.tag-cli{border-color:var(--accent3);color:var(--accent3)}
+/* Modal */
+.modal-overlay{display:none;position:fixed;inset:0;z-index:999;background:rgba(0,0,0,.6);align-items:center;justify-content:center}
+.modal-overlay.show{display:flex}
+.modal{background:var(--bg2);border:1px solid var(--border);border-radius:12px;width:520px;max-height:80vh;overflow-y:auto;box-shadow:0 16px 48px rgba(0,0,0,.4)}
+.modal-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.modal-header h3{font-size:15px;font-weight:600}
+.modal-close{width:28px;height:28px;border-radius:50%;border:none;background:transparent;color:var(--text2);cursor:pointer;font-size:16px}
+.modal-close:hover{background:var(--bg3);color:var(--text)}
+.modal-body{padding:20px}
+.modal-footer{padding:12px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px}
+/* Form */
+.form-group{margin-bottom:16px}
+.form-group label{display:block;font-size:12px;color:var(--text2);margin-bottom:5px;font-weight:500}
+.form-group input,.form-group select{width:100%;padding:8px 12px;border-radius:var(--radius);border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:13px;font-family:inherit;outline:none;transition:border-color .15s}
+.form-group input:focus,.form-group select:focus{border-color:var(--accent)}
+.form-group .hint{font-size:10px;color:var(--text2);margin-top:3px}
+.form-row{display:flex;gap:12px}
+.form-row .form-group{flex:1}
+/* Checkbox group */
+.checkbox-group{display:flex;flex-wrap:wrap;gap:8px;padding:4px 0}
+.checkbox-group label{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2);cursor:pointer;padding:4px 10px;border-radius:6px;border:1px solid var(--border);transition:all .1s}
+.checkbox-group label:hover{border-color:var(--accent);color:var(--text)}
+.checkbox-group input[type="checkbox"]{display:none}
+.checkbox-group input[type="checkbox"]:checked+span{color:var(--accent)}
+.checkbox-group label:has(input:checked){border-color:var(--accent);background:rgba(88,166,255,.08)}
+/* Empty */
+.empty{text-align:center;padding:40px 20px;color:var(--text2)}
+.empty .icon{font-size:40px;margin-bottom:12px;opacity:.3}
+.empty p{font-size:13px}
+.empty .sub{font-size:11px;margin-top:4px}
+/* Chat */
+.chat-messages{flex:1;overflow-y:auto;padding:16px 24px}
 .msg-row{display:flex;gap:12px;margin-bottom:16px;animation:fadeIn .2s ease}
 @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
-.msg-row .msg-avatar{
-  width:32px;height:32px;border-radius:50%;flex-shrink:0;
-  display:flex;align-items:center;justify-content:center;font-size:14px;
-  margin-top:2px;
-}
-.msg-row .msg-body{flex:1;min-width:0}
-.msg-row .msg-header{display:flex;align-items:center;gap:8px;margin-bottom:2px}
-.msg-row .msg-name{font-size:12px;font-weight:600;color:var(--text)}
-.msg-row .msg-role{font-size:10px;color:var(--text2)}
-.msg-row .msg-time{font-size:10px;color:var(--text2);margin-left:auto}
-.msg-row .msg-content{
-  font-size:13px;line-height:1.55;color:var(--text);
-  white-space:pre-wrap;word-break:break-word;
-}
-.msg-row.user .msg-content{color:var(--accent2)}
-.msg-row.system .msg-content{color:var(--text2);font-style:italic;font-size:12px}
-
-/* Typing Animation */
-.typing-dots{display:flex;gap:3px;padding:4px 0}
-.typing-dots span{
-  width:6px;height:6px;border-radius:50%;background:var(--text2);
-  animation:dotBounce 1.4s infinite ease-in-out;
-}
-.typing-dots span:nth-child(2){animation-delay:.2s}
-.typing-dots span:nth-child(3){animation-delay:.4s}
-@keyframes dotBounce{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-4px)}}
-
-/* Input */
-.input-area{
-  padding:12px 24px 16px;border-top:1px solid var(--border);background:var(--bg2);
-}
-.input-wrap{
-  display:flex;gap:8px;align-items:flex-end;
-  background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);
-  padding:4px 4px 4px 12px;transition:border-color .15s;
-}
-.input-wrap:focus-within{border-color:var(--accent)}
-.input-wrap textarea{
-  flex:1;border:none;background:transparent;color:var(--text);
-  font-size:13px;font-family:inherit;outline:none;resize:none;
-  padding:8px 0;min-height:20px;max-height:120px;line-height:1.4;
-}
-.input-wrap textarea::placeholder{color:var(--text2)}
-.send-btn{
-  width:34px;height:34px;border-radius:var(--radius);
-  background:var(--accent);color:#fff;border:none;
-  font-size:16px;cursor:pointer;transition:opacity .15s;
-  display:flex;align-items:center;justify-content:center;flex-shrink:0;
-}
-.send-btn:hover{opacity:.85}
-.send-btn:disabled{opacity:.3;cursor:not-allowed}
-
-/* ====== Right Panel ====== */
-.right-panel{
-  width:320px;border-left:1px solid var(--border);
-  display:flex;flex-direction:column;overflow:hidden;
-  background:var(--bg2);flex-shrink:0;
-}
-.panel-tabs{
-  display:flex;border-bottom:1px solid var(--border);flex-shrink:0;
-}
-.panel-tab{
-  flex:1;text-align:center;padding:10px 0;font-size:12px;
-  color:var(--text2);cursor:pointer;border-bottom:2px solid transparent;
-  transition:all .15s;
-}
-.panel-tab:hover{color:var(--text)}
-.panel-tab.active{color:var(--accent);border-bottom-color:var(--accent)}
-
-.panel-content{flex:1;overflow-y:auto;padding:12px 16px}
-.panel-content::-webkit-scrollbar{width:4px}
-.panel-content::-webkit-scrollbar-track{background:transparent}
-.panel-content::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
-.panel-content .panel-item{
-  display:flex;align-items:center;gap:10px;
-  padding:8px 10px;border-radius:var(--radius);cursor:pointer;
-  font-size:12px;color:var(--text2);transition:all .15s;
-  margin-bottom:2px;
-}
-.panel-content .panel-item:hover{background:var(--bg3);color:var(--text)}
-.panel-content .panel-item .status-dot{
-  width:8px;height:8px;border-radius:50%;flex-shrink:0;
-}
-.panel-content .panel-item .status-dot.on{background:var(--accent2)}
-.panel-content .panel-item .status-dot.off{background:var(--text2)}
-.panel-content .panel-item .right{font-size:10px;color:var(--text2);margin-left:auto}
-
-/* File panel */
-.file-list .file-item{
-  display:flex;align-items:center;gap:8px;
-  padding:6px 10px;border-radius:var(--radius);
-  font-size:12px;color:var(--text2);font-family:monospace;
-  cursor:pointer;transition:all .1s;
-}
-.file-item:hover{background:var(--bg3);color:var(--text)}
-.file-item .file-icon{font-size:14px}
-
-/* ====== Empty State ====== */
-.empty-state{
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  height:100%;color:var(--text2);gap:12px;
-}
-.empty-state .big-icon{font-size:48px;opacity:.3}
-.empty-state .hint{font-size:13px}
-.empty-state .sub-hint{font-size:11px}
-
-/* ====== Tool call display ====== */
-.tool-call{
-  display:inline-flex;align-items:center;gap:4px;
-  background:var(--bg3);border:1px solid var(--border);
-  border-radius:4px;padding:2px 8px;font-size:11px;
-  color:var(--accent);font-family:monospace;margin:2px 0;
-}
-
-/* ====== Agent colors ====== */
-.agent-tag{display:inline-flex;align-items:center;gap:4px;padding:1px 6px;border-radius:4px;font-size:10px;font-weight:500}
-
-/* Scrollbar */
-::-webkit-scrollbar{width:6px}
-::-webkit-scrollbar-track{background:transparent}
-::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+.msg-row .avatar{width:30px;height:30px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:13px;margin-top:2px}
+.msg-row .body{flex:1;min-width:0}
+.msg-row .header{display:flex;align-items:center;gap:8px;margin-bottom:2px}
+.msg-row .name{font-size:12px;font-weight:600}
+.msg-row .time{font-size:10px;color:var(--text2);margin-left:auto}
+.msg-row .text{font-size:13px;line-height:1.55;white-space:pre-wrap;word-break:break-word;color:var(--text)}
+.msg-row.user .text{color:var(--accent2)}
+.chat-input{display:flex;gap:8px;padding:12px 24px 16px;border-top:1px solid var(--border);background:var(--bg2)}
+.chat-input textarea{flex:1;padding:8px 12px;border-radius:var(--radius);border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:13px;font-family:inherit;outline:none;resize:none;min-height:36px;max-height:100px;line-height:1.4}
+.chat-input textarea:focus{border-color:var(--accent)}
+.chat-input button{padding:8px 16px;border-radius:var(--radius);border:none;background:var(--accent);color:#fff;font-size:13px;cursor:pointer}
+.chat-input button:disabled{opacity:.3;cursor:not-allowed}
 </style>
 </head>
 <body>
 
-<!-- ====== Sidebar ====== -->
 <div class="sidebar">
   <div class="sidebar-header">
     <div class="logo">M</div>
-    <div>
-      <h1>Modul Agent</h1>
-      <div class="ver">v0.1 · 多模型协作</div>
-    </div>
+    <h1>Modul Agent</h1>
   </div>
-
-  <div class="sidebar-section">
-    <div class="sec-title">会话</div>
-    <div id="sessionList"></div>
-    <div class="new-btn" onclick="createSession()">+ 新建会话</div>
+  <div class="nav-item active" onclick="switchPage('chat',this)">
+    <span>💬</span> 聊天
   </div>
-
-  <div class="sidebar-section" style="flex:1;overflow-y:auto">
-    <div class="sec-title">模型池</div>
-    <div id="agentPool"></div>
+  <div class="nav-item" onclick="switchPage('agents',this)">
+    <span>🤖</span> 模型管理
+  </div>
+  <div class="nav-item" onclick="switchPage('sessions',this)">
+    <span>📋</span> 会话
   </div>
 </div>
 
-<!-- ====== Main ====== -->
 <div class="main">
   <div class="topbar" id="topbar">
-    <div class="session-info">
-      <div class="session-name" id="sessionName">选择一个会话开始</div>
-      <div class="session-meta" id="sessionMeta"></div>
+    <h2 id="pageTitle">聊天</h2>
+    <span class="sub" id="pageSub"></span>
+  </div>
+
+  <!-- ====== Chat Page ====== -->
+  <div class="page active" id="pageChat" style="display:flex;flex-direction:column;height:100%">
+    <div class="chat-messages" id="chatMessages">
+      <div class="empty"><div class="icon">🧠</div><p>选择一个会话开始聊天</p><div class="sub">先在左侧切换到「会话」创建或选择</div></div>
     </div>
-    <div class="controls" id="sessionControls" style="display:none">
-      <span style="font-size:11px;color:var(--text2)">调度:</span>
-      <select class="orchestrator-select" id="orchestratorSelect" onchange="changeOrchestrator(this.value)">
-        <option value="broadcast">广播</option>
-        <option value="direct">定向</option>
-        <option value="chain">串联</option>
-        <option value="master">主模型</option>
-      </select>
-      <div id="sessionAgents" style="display:flex;gap:4px;flex-wrap:wrap"></div>
+    <div class="chat-input" id="chatInput" style="display:none">
+      <textarea id="chatText" placeholder="发消息...（按 Enter 发送）" rows="1"
+        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat()}"
+        oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,100)+'px'"></textarea>
+      <button id="sendBtn" onclick="sendChat()">发送</button>
     </div>
   </div>
 
-  <div class="content">
-    <!-- Chat -->
-    <div class="chat-panel">
-      <div class="messages" id="messages">
-        <div class="empty-state" id="emptyState">
-          <div class="big-icon">🧠</div>
-          <div class="hint">选择或创建一个会话</div>
-          <div class="sub-hint">它会出现在左侧的会话列表中</div>
-        </div>
-      </div>
-      <!-- Input -->
-      <div class="input-area" id="inputArea" style="display:none">
-        <div class="input-wrap">
-          <textarea id="input" placeholder="发消息..." rows="1"
-            onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();send();}"
-            oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px'"></textarea>
-          <button class="send-btn" id="sendBtn" onclick="send()">↵</button>
-        </div>
+  <!-- ====== Agents Page ====== -->
+  <div class="page" id="pageAgents">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <div style="font-size:12px;color:var(--text2)">管理你的所有 AI 模型</div>
+      <button class="btn btn-primary" onclick="openAddAgent()">+ 添加模型</button>
+    </div>
+    <div class="card">
+      <div class="card-header"><h3>已注册模型</h3></div>
+      <div class="card-body" style="padding:0">
+        <table id="agentTable">
+          <thead><tr><th>名称</th><th>类型</th><th>模型</th><th>供应商</th><th>Hand</th><th style="width:80px">操作</th></tr></thead>
+          <tbody id="agentTableBody"></tbody>
+        </table>
       </div>
     </div>
+  </div>
 
-    <!-- Right Panel -->
-    <div class="right-panel">
-      <div class="panel-tabs">
-        <div class="panel-tab active" onclick="switchPanel('agents',this)">模型</div>
-        <div class="panel-tab" onclick="switchPanel('files',this)">文件</div>
-        <div class="panel-tab" onclick="switchPanel('info',this)">信息</div>
+  <!-- ====== Sessions Page ====== -->
+  <div class="page" id="pageSessions">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <div style="font-size:12px;color:var(--text2)">创建和管理多模型协作会话</div>
+      <button class="btn btn-primary" onclick="openNewSession()">+ 新建会话</button>
+    </div>
+    <div class="card">
+      <div class="card-header"><h3>所有会话</h3></div>
+      <div class="card-body" style="padding:0">
+        <table>
+          <thead><tr><th>名称</th><th>模型</th><th>调度模式</th><th>消息</th><th>创建时间</th><th style="width:80px">操作</th></tr></thead>
+          <tbody id="sessionTableBody"></tbody>
+        </table>
       </div>
-      <div class="panel-content" id="panelAgents"></div>
-      <div class="panel-content" id="panelFiles" style="display:none"></div>
-      <div class="panel-content" id="panelInfo" style="display:none"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ====== Add Agent Modal ====== -->
+<div class="modal-overlay" id="addAgentModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>添加模型</h3>
+      <button class="modal-close" onclick="closeModal('addAgentModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>供应商</label>
+        <select id="agentProvider" onchange="onProviderChange()">
+          <option value="">— 选择供应商 —</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>模型名称</label>
+        <select id="agentModel">
+          <option value="">— 先选供应商 —</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>显示名称</label>
+        <input id="agentName" placeholder="例如: 我的 DeepSeek">
+        <div class="hint">留空则使用模型名作为名称</div>
+      </div>
+      <div class="form-group">
+        <label>API Token / Key</label>
+        <input id="agentKey" type="password" placeholder="sk-...">
+      </div>
+      <div class="form-group" id="baseUrlGroup" style="display:none">
+        <label>API 地址（自定义）</label>
+        <input id="agentBaseUrl" placeholder="https://api.xxx.com/v1">
+      </div>
+      <div class="form-group" id="cliCommandGroup" style="display:none">
+        <label>CLI 命令</label>
+        <input id="agentCommand" placeholder='例如: hermes chat -q "{input}"'>
+        <div class="hint">使用 {input} 作为用户消息占位符</div>
+      </div>
+      <div class="form-group">
+        <label>能力插件（Hand）</label>
+        <div class="checkbox-group" id="handCheckboxes"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('addAgentModal')">取消</button>
+      <button class="btn btn-primary" onclick="submitAgent()">添加</button>
+    </div>
+  </div>
+</div>
+
+<!-- ====== New Session Modal ====== -->
+<div class="modal-overlay" id="newSessionModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>新建会话</h3>
+      <button class="modal-close" onclick="closeModal('newSessionModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>会话名称</label>
+        <input id="sessionName" placeholder="例如: 研究小组">
+      </div>
+      <div class="form-group">
+        <label>选择模型加入会话</label>
+        <div class="checkbox-group" id="sessionAgentCheckboxes"></div>
+        <div class="hint" id="noAgentHint" style="color:var(--accent3)">还没有模型，先去「模型管理」添加</div>
+      </div>
+      <div class="form-group">
+        <label>调度模式</label>
+        <select id="sessionOrchestrator">
+          <option value="broadcast">广播 — 所有模型都回复</option>
+          <option value="direct">定向 — 用 @模型名 指定</option>
+          <option value="chain">串联 — 按顺序执行</option>
+          <option value="master">主模型 — 第一个模型分配任务</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('newSessionModal')">取消</button>
+      <button class="btn btn-primary" onclick="submitNewSession()">创建</button>
     </div>
   </div>
 </div>
 
 <script>
 // ====== State ======
-let sessions = {};
-let agents = {};
-let hands = {};
-let currentSessionId = null;
-let ws = null;
-const BASE = '';
+let state = { agents: {}, sessions: {}, hands: {}, providers: [], currentSessionId: null, currentProvider: null };
 
 // ====== Init ======
 async function init() {
-  // Load agents & hands
-  const [agentsRes, handsRes] = await Promise.all([
-    fetch(BASE + '/api/agents').then(r => r.json()),
-    fetch(BASE + '/api/hands').then(r => r.json()),
-  ]);
-  agents = agentsRes;
-  hands = handsRes;
-  renderAgentPool();
-  renderRightPanel();
-
-  // Load sessions
-  await refreshSessions();
+  await Promise.all([loadAgents(), loadHands(), loadProviders(), loadSessions()]);
+  renderAgentTable();
+  renderSessionTable();
+  renderChatSidebar();
 }
 
-// ====== API Calls ======
-async function refreshSessions() {
-  const res = await fetch(BASE + '/api/sessions');
-  sessions = await res.json();
-  renderSessionList();
+async function loadAgents() {
+  const res = await fetch('/api/agents'); state.agents = await res.json();
+}
+async function loadHands() {
+  const res = await fetch('/api/hands'); state.hands = await res.json();
+}
+async function loadProviders() {
+  const res = await fetch('/api/providers'); const data = await res.json();
+  state.providers = data.providers || [];
+}
+async function loadSessions() {
+  const res = await fetch('/api/sessions'); state.sessions = await res.json();
 }
 
-async function loadSession(id) {
-  const res = await fetch(BASE + `/api/sessions/${id}`);
-  const session = await res.json();
-  currentSessionId = id;
-  renderSession(session);
-  renderMessages(session.messages || []);
-  connectWs(id);
-  document.getElementById('inputArea').style.display = 'flex';
-  document.getElementById('emptyState').style.display = 'none';
-  // 更新侧栏高亮
-  document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active'));
-  const sel = document.querySelector(`.sidebar-item[data-id="${id}"]`);
-  if (sel) sel.classList.add('active');
+// ====== Page Switch ======
+function switchPage(page, el) {
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const pageMap = { chat: 'pageChat', agents: 'pageAgents', sessions: 'pageSessions' };
+  document.getElementById(pageMap[page]).classList.add('active');
+  if (page === 'chat') { renderChatPage(); document.getElementById('pageChat').style.display = 'flex'; }
+  else { document.getElementById('pageChat').style.display = 'none'; }
+  document.getElementById('pageTitle').textContent = {chat:'聊天',agents:'模型管理',sessions:'会话'}[page];
 }
 
-async function createSession() {
-  const name = prompt('会话名称:', '新会话 ' + new Date().toLocaleTimeString());
-  if (!name) return;
-  const res = await fetch(BASE + '/api/sessions', {
+// ====== Agents Management ======
+function renderAgentTable() {
+  const tbody = document.getElementById('agentTableBody');
+  const entries = Object.entries(state.agents);
+  if (entries.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6"><div class="empty"><p>还没有注册任何模型</p><div class="sub">点右上角「添加模型」开始</div></div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = entries.map(([name, a]) => `
+    <tr>
+      <td><strong>${name}</strong></td>
+      <td><span class="tag ${a.type === 'cli' ? 'tag-cli' : 'tag-api'}">${a.type}</span></td>
+      <td style="font-size:12px;color:var(--text2)">${a.model}</td>
+      <td style="font-size:12px;color:var(--text2)">${a.provider || '-'}</td>
+      <td>${(a.hands||[]).map(h => `<span class="tag">${h}</span>`).join(' ') || '-'}</td>
+      <td><button class="btn btn-sm btn-danger" onclick="deleteAgent('${name}')">删除</button></td>
+    </tr>
+  `).join('');
+  // 更新会话创建页的勾选框
+  renderSessionAgentCheckboxes();
+  renderChatSidebar();
+}
+
+function openAddAgent() {
+  const sel = document.getElementById('agentProvider');
+  sel.innerHTML = '<option value="">— 选择供应商 —</option>' +
+    state.providers.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+  document.getElementById('agentModel').innerHTML = '<option value="">— 先选供应商 —</option>';
+  document.getElementById('agentName').value = '';
+  document.getElementById('agentKey').value = '';
+  document.getElementById('agentBaseUrl').value = '';
+  document.getElementById('agentCommand').value = '';
+  document.getElementById('baseUrlGroup').style.display = 'none';
+  document.getElementById('cliCommandGroup').style.display = 'none';
+  // Hand 复选框
+  const handBoxes = document.getElementById('handCheckboxes');
+  handBoxes.innerHTML = Object.entries(state.hands).map(([name, h]) =>
+    `<label><input type="checkbox" value="${name}" checked> <span>${name}</span></label>`
+  ).join('');
+  openModal('addAgentModal');
+}
+
+function onProviderChange() {
+  const id = document.getElementById('agentProvider').value;
+  const provider = state.providers.find(p => p.id === id);
+  if (!provider) return;
+  const modelSel = document.getElementById('agentModel');
+  modelSel.innerHTML = provider.models.map(m => `<option value="${m}">${m}</option>`).join('');
+  document.getElementById('agentName').value = provider.name.replace(/（.*）/,'').trim();
+  document.getElementById('baseUrlGroup').style.display = provider.id === 'custom' ? 'block' : 'none';
+  document.getElementById('cliCommandGroup').style.display = provider.type === 'cli' ? 'block' : 'none';
+  document.getElementById('agentBaseUrl').value = provider.defaultBaseUrl || '';
+  document.getElementById('agentCommand').value = provider.id === 'cli' ? 'hermes chat -q \'{input}\'' : '';
+  state.currentProvider = provider;
+}
+
+async function submitAgent() {
+  const providerId = document.getElementById('agentProvider').value;
+  const model = document.getElementById('agentModel').value;
+  let name = document.getElementById('agentName').value.trim();
+  const apiKey = document.getElementById('agentKey').value.trim();
+  const baseUrl = document.getElementById('agentBaseUrl').value.trim();
+  const command = document.getElementById('agentCommand').value.trim();
+  const hands = [...document.querySelectorAll('#handCheckboxes input:checked')].map(i => i.value);
+
+  if (!providerId) return alert('请选择供应商');
+  if (!model) return alert('请选择模型');
+  if (!name) name = model;
+
+  if (state.agents[name]) return alert(`名称 "${name}" 已被占用`);
+
+  const provider = state.providers.find(p => p.id === providerId);
+  const isCli = provider && provider.type === 'cli';
+
+  if (!isCli && !apiKey) return alert('API Token 不能为空');
+  if (isCli && !command) return alert('CLI 命令不能为空');
+
+  const body = {
+    name,
+    type: isCli ? 'cli' : 'api',
+    provider: providerId,
+    model,
+    api_key: apiKey,
+    base_url: baseUrl || (provider ? provider.defaultBaseUrl : ''),
+    command,
+    hands,
+  };
+
+  try {
+    const res = await fetch('/api/agents', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(body),
+    });
+    const data = await res.json();
+    if (data.ok) {
+      closeModal('addAgentModal');
+      await loadAgents();
+      renderAgentTable();
+    } else {
+      alert(data.error || '添加失败');
+    }
+  } catch(e) { alert('网络错误'); }
+}
+
+async function deleteAgent(name) {
+  if (!confirm(`删除模型 "${name}"？从所有会话中移除`)) return;
+  const res = await fetch(`/api/agents/${encodeURIComponent(name)}`, { method: 'DELETE' });
+  if (res.ok) {
+    await loadAgents();
+    renderAgentTable();
+  }
+}
+
+// ====== Sessions ======
+function renderSessionTable() {
+  const tbody = document.getElementById('sessionTableBody');
+  const entries = Object.entries(state.sessions);
+  if (entries.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6"><div class="empty"><p>还没有会话</p><div class="sub">点右上角「新建会话」开始</div></div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = entries.map(([id, s]) => `
+    <tr onclick="switchToSession('${id}')" style="cursor:pointer">
+      <td><strong>${s.name}</strong></td>
+      <td style="font-size:12px;color:var(--text2)">${(s.agents||[]).join(', ') || '-'}</td>
+      <td><span class="tag">${s.orchestrator}</span></td>
+      <td>${s.messageCount || 0}</td>
+      <td style="font-size:11px;color:var(--text2)">${s.createdAt ? new Date(s.createdAt).toLocaleString() : '-'}</td>
+      <td><button class="btn btn-sm btn-danger" onclick="event.stopPropagation();deleteSession('${id}')">删除</button></td>
+    </tr>
+  `).join('');
+}
+
+function renderSessionAgentCheckboxes() {
+  const div = document.getElementById('sessionAgentCheckboxes');
+  const entries = Object.entries(state.agents);
+  if (entries.length === 0) {
+    div.innerHTML = '';
+    document.getElementById('noAgentHint').style.display = 'block';
+    return;
+  }
+  document.getElementById('noAgentHint').style.display = 'none';
+  div.innerHTML = entries.map(([name]) =>
+    `<label><input type="checkbox" value="${name}" checked> <span>${name}</span></label>`
+  ).join('');
+}
+
+function openNewSession() {
+  renderSessionAgentCheckboxes();
+  document.getElementById('sessionName').value = '新会话 ' + new Date().toLocaleTimeString();
+  openModal('newSessionModal');
+}
+
+async function submitNewSession() {
+  const name = document.getElementById('sessionName').value.trim() || '未命名';
+  const agents = [...document.querySelectorAll('#sessionAgentCheckboxes input:checked')].map(i => i.value);
+  const orchestrator = document.getElementById('sessionOrchestrator').value;
+  if (agents.length === 0) return alert('请至少选择一个模型');
+
+  const res = await fetch('/api/sessions', {
     method: 'POST',
     headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ name, agents: Object.keys(agents) }),
+    body: JSON.stringify({ name, agents, orchestrator }),
   });
   const session = await res.json();
-  await refreshSessions();
-  loadSession(session.id);
+  closeModal('newSessionModal');
+  await loadSessions();
+  renderSessionTable();
+  renderChatSidebar();
+  switchToSession(session.id);
 }
 
 async function deleteSession(id) {
   if (!confirm('删除此会话？')) return;
-  await fetch(BASE + `/api/sessions/${id}`, { method: 'DELETE' });
-  if (currentSessionId === id) {
-    currentSessionId = null;
-    document.getElementById('sessionName').textContent = '选择一个会话开始';
-    document.getElementById('sessionMeta').textContent = '';
-    document.getElementById('messages').innerHTML = `<div class="empty-state" id="emptyState">
-      <div class="big-icon">🧠</div>
-      <div class="hint">选择或创建一个会话</div>
-      <div class="sub-hint">它会出现在左侧的会话列表中</div>
-    </div>`;
-    document.getElementById('inputArea').style.display = 'none';
-    document.getElementById('sessionControls').style.display = 'none';
-    if (ws) { ws.close(); ws = null; }
+  await fetch(`/api/sessions/${id}`, { method: 'DELETE' });
+  if (state.currentSessionId === id) {
+    state.currentSessionId = null;
+    renderChatPage();
   }
-  await refreshSessions();
+  await loadSessions();
+  renderSessionTable();
+  renderChatSidebar();
 }
 
-async function send() {
-  const input = document.getElementById('input');
-  const text = input.value.trim();
-  if (!text || !currentSessionId) return;
-  input.value = '';
-  input.style.height = 'auto';
-
-  // 显示用户消息
-  addMessage({ role: 'user', agent: null, content: text });
-
-  // 调 API
-  const res = await fetch(BASE + `/api/sessions/${currentSessionId}/send`, {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ text }),
-  });
-  const data = await res.json();
-  if (data.results) {
-    for (const r of data.results) {
-      if (r.error) {
-        addSystem(`❌ ${r.agent || '?'}: ${r.error}`);
-      } else if (r.text) {
-        addMessage({ role: 'assistant', agent: r.agent, content: r.text });
-      }
-      // master mode
-      if (r.master) addMessage({ role: 'assistant', agent: r.master, content: r.master.text });
-      if (r.workers) {
-        for (const w of r.workers) {
-          if (w.text) addMessage({ role: 'assistant', agent: w.agent, content: w.text });
-        }
-      }
-    }
-  }
+// ====== Chat ======
+function renderChatSidebar() {
+  // 更新导航栏的会话计数
+  const count = Object.keys(state.sessions).length;
+  const badge = document.querySelector('.nav-item:nth-child(3) .badge');
+  if (badge) badge.textContent = count;
 }
 
-async function addAgentToSession(agentName) {
-  if (!currentSessionId) return alert('请先选择一个会话');
-  await fetch(BASE + `/api/sessions/${currentSessionId}/agents`, {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ agent: agentName }),
-  });
-  const res = await fetch(BASE + `/api/sessions/${currentSessionId}`);
-  renderSession(await res.json());
-}
-
-async function removeAgentFromSession(agentName) {
-  if (!currentSessionId) return;
-  await fetch(BASE + `/api/sessions/${currentSessionId}/agents/${encodeURIComponent(agentName)}`, { method: 'DELETE' });
-  const res = await fetch(BASE + `/api/sessions/${currentSessionId}`);
-  renderSession(await res.json());
-}
-
-async function changeOrchestrator(mode) {
-  if (!currentSessionId) return;
-  await fetch(BASE + `/api/sessions/${currentSessionId}/orchestrator`, {
-    method: 'PUT',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ mode }),
-  });
-}
-
-// ====== WebSocket ======
-function connectWs(sessionId) {
-  if (ws) ws.close();
-  const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
-  ws = new WebSocket(proto + '//' + window.location.host);
-  ws.onopen = () => {
-    ws.send(JSON.stringify({ type: 'join', sessionId }));
-  };
-  ws.onmessage = (e) => {
-    const pkt = JSON.parse(e.data);
-    if (pkt.type === 'agent_replies') {
-      const results = pkt.results;
-      if (Array.isArray(results)) {
-        for (const r of results) {
-          if (r.text) addMessage({ role: 'assistant', agent: r.agent, content: r.text });
-        }
-      }
-    }
-  };
-}
-
-// ====== Render ======
-function renderSessionList() {
-  const list = document.getElementById('sessionList');
-  list.innerHTML = '';
-  for (const [id, s] of Object.entries(sessions)) {
-    const div = document.createElement('div');
-    div.className = 'sidebar-item';
-    div.dataset.id = id;
-    div.innerHTML = `<span class="icon">💬</span>${s.name}<span class="badge">${s.messageCount || 0}</span>`;
-    div.onclick = () => loadSession(id);
-    div.oncontextmenu = (e) => {
-      e.preventDefault();
-      if (confirm(`删除会话 "${s.name}"？`)) deleteSession(id);
-    };
-    list.appendChild(div);
-  }
-}
-
-function renderAgentPool() {
-  const pool = document.getElementById('agentPool');
-  pool.innerHTML = '';
-  for (const [name, agent] of Object.entries(agents)) {
-    const div = document.createElement('div');
-    div.className = 'sidebar-item';
-    div.innerHTML = `
-      <span class="icon">🤖</span>
-      ${name}
-      <span class="badge ${agent.type === 'cli' ? 'orange' : 'green'}">${agent.type}</span>
-    `;
-    div.onclick = () => addAgentToSession(name);
-    div.title = `点击加入当前会话\n类型: ${agent.type}\n模型: ${agent.model}`;
-    pool.appendChild(div);
-  }
-}
-
-function renderSession(session) {
-  document.getElementById('sessionName').textContent = session.name || '未命名';
-  document.getElementById('sessionMeta').textContent =
-    `${session.agents?.length || 0} 个模型 · ${session.messages?.length || 0} 条消息 · ${session.orchestrator || 'broadcast'}`;
-  document.getElementById('sessionControls').style.display = 'flex';
-  document.getElementById('orchestratorSelect').value = session.orchestrator || 'broadcast';
-
-  // Agent tags
-  const tags = document.getElementById('sessionAgents');
-  tags.innerHTML = '';
-  for (const agent of session.agents || []) {
-    const tag = document.createElement('span');
-    tag.className = 'tag';
-    tag.innerHTML = `🤖 ${agent} <span class="remove" onclick="event.stopPropagation();removeAgentFromSession('${agent}')">✕</span>`;
-    tags.appendChild(tag);
-  }
-}
-
-function renderMessages(msgs) {
-  const area = document.getElementById('messages');
-  area.innerHTML = '';
-  for (const m of msgs) {
-    if (m.role === 'user') addMessage({ role: 'user', agent: null, content: m.content });
-    else if (m.role === 'assistant') addMessage({ role: 'assistant', agent: m.agent, content: m.content });
-    else if (m.role === 'system') addSystem(m.content);
-  }
-  scrollBottom();
-}
-
-function addMessage(msg) {
-  const area = document.getElementById('messages');
-  const div = document.createElement('div');
-  div.className = `msg-row ${msg.role === 'user' ? 'user' : msg.role === 'system' ? 'system' : ''}`;
-  div.style.opacity = '0';
-
-  if (msg.role === 'system') {
-    div.innerHTML = `<div class="msg-content">${escapeHtml(msg.content)}</div>`;
-  } else if (msg.role === 'user') {
-    div.innerHTML = `
-      <div class="msg-avatar" style="background:rgba(63,185,80,.15);color:var(--accent2);font-size:16px">👤</div>
-      <div class="msg-body">
-        <div class="msg-header">
-          <span class="msg-name">你</span>
-          <span class="msg-time">${new Date().toLocaleTimeString()}</span>
-        </div>
-        <div class="msg-content">${escapeHtml(msg.content)}</div>
-      </div>`;
-  } else {
-    const agentInfo = agents[msg.agent] || {};
-    const handInfo = hands[msg.agent] || {};
-    div.innerHTML = `
-      <div class="msg-avatar" style="background:rgba(88,166,255,.15);color:var(--accent);font-size:14px">🤖</div>
-      <div class="msg-body">
-        <div class="msg-header">
-          <span class="msg-name">${msg.agent || 'AI'}</span>
-          <span class="msg-role">${agentInfo.type || ''} · ${agentInfo.model || ''}</span>
-          <span class="msg-time">${new Date().toLocaleTimeString()}</span>
-        </div>
-        <div class="msg-content">${escapeHtml(msg.content)}</div>
-      </div>`;
-  }
-
-  area.appendChild(div);
-  requestAnimationFrame(() => { div.style.opacity = '1'; });
-  scrollBottom();
-}
-
-function addSystem(text) {
-  addMessage({ role: 'system', content: text });
-}
-
-function scrollBottom() {
-  const area = document.getElementById('messages');
-  requestAnimationFrame(() => { area.scrollTop = area.scrollHeight; });
-}
-
-// ====== Right Panel ======
-function switchPanel(tab, el) {
-  document.querySelectorAll('.panel-tab').forEach(t => t.classList.remove('active'));
-  el.classList.add('active');
-  document.getElementById('panelAgents').style.display = tab === 'agents' ? 'block' : 'none';
-  document.getElementById('panelFiles').style.display = tab === 'files' ? 'block' : 'none';
-  document.getElementById('panelInfo').style.display = tab === 'info' ? 'block' : 'none';
-  if (tab === 'agents') renderRightPanel();
-  if (tab === 'files') renderFilePanel();
-  if (tab === 'info') renderInfoPanel();
-}
-
-function renderRightPanel() {
-  const panel = document.getElementById('panelAgents');
-  panel.innerHTML = '<div style="font-size:11px;color:var(--text2);margin-bottom:8px">已注册的模型 · 点击加入会话</div>';
-  for (const [name, agent] of Object.entries(agents)) {
-    const div = document.createElement('div');
-    div.className = 'panel-item';
-    const handNames = (agent.hands || []).join(', ') || '无';
-    div.innerHTML = `
-      <span class="status-dot on"></span>
-      <div style="flex:1">
-        <div style="font-weight:500;font-size:13px;color:var(--text)">${name}</div>
-        <div style="font-size:10px;color:var(--text2)">${agent.type} · ${agent.model}</div>
-      </div>
-    `;
-    div.onclick = () => addAgentToSession(name);
-    panel.appendChild(div);
-  }
-}
-
-async function renderFilePanel() {
-  const panel = document.getElementById('panelFiles');
-  panel.innerHTML = '<div style="font-size:11px;color:var(--text2);margin-bottom:8px">共享文件库 (会话目录)</div>';
-  if (!currentSessionId) {
-    panel.innerHTML += '<div style="color:var(--text2);font-size:12px">选择会话后查看</div>';
+function renderChatPage() {
+  const msgs = document.getElementById('chatMessages');
+  const input = document.getElementById('chatInput');
+  if (!state.currentSessionId) {
+    msgs.innerHTML = '<div class="empty"><div class="icon">💬</div><p>从「会话」页面选择一个会话</p><div class="sub">或者创建一个新的</div></div>';
+    input.style.display = 'none';
+    document.getElementById('pageSub').textContent = '';
     return;
   }
-  try {
-    const res = await fetch(BASE + `/api/sessions/${currentSessionId}`);
-    const session = await res.json();
-    const sharedDir = session.sharedDir || '/shared';
-    panel.innerHTML += `<div style="font-size:10px;color:var(--text2);margin-bottom:12px;font-family:monospace">${sharedDir}</div>`;
-    panel.innerHTML += '<div class="file-list"><div class="file-item"><span class="file-icon">📁</span> ..</div></div>';
-  } catch {
-    panel.innerHTML += '<div style="color:var(--text2);font-size:12px">无法加载</div>';
-  }
+  const session = state.sessions[state.currentSessionId];
+  if (!session) { renderChatPage(); return; }
+  document.getElementById('pageSub').textContent = `${session.name} · ${(session.agents||[]).join(', ')}`;
+  input.style.display = 'flex';
+  document.getElementById('sendBtn').disabled = false;
+
+  // 加载消息
+  fetch(`/api/sessions/${state.currentSessionId}/messages`).then(r=>r.json()).then(msgsData => {
+    msgs.innerHTML = msgsData.map(m => {
+      if (m.role === 'user') {
+        return `<div class="msg-row user"><div class="avatar" style="background:rgba(63,185,80,.15);color:var(--accent2)">👤</div><div class="body"><div class="header"><span class="name">你</span><span class="time">${new Date(m.timestamp).toLocaleTimeString()}</span></div><div class="text">${escHtml(m.content)}</div></div></div>`;
+      } else {
+        return `<div class="msg-row"><div class="avatar" style="background:rgba(88,166,255,.15);color:var(--accent)">🤖</div><div class="body"><div class="header"><span class="name">${m.agent||'AI'}</span><span class="time">${new Date(m.timestamp).toLocaleTimeString()}</span></div><div class="text">${escHtml(m.content)}</div></div></div>`;
+      }
+    }).join('');
+    msgs.scrollTop = msgs.scrollHeight;
+  });
 }
 
-function renderInfoPanel() {
-  const panel = document.getElementById('panelInfo');
-  let html = '<div style="font-size:11px;color:var(--text2);margin-bottom:8px">系统信息</div>';
-  html += '<div style="font-size:12px;line-height:2">';
-  html += `<div>🤖 模型: ${Object.keys(agents).length} 个</div>`;
-  html += `<div>💬 会话: ${Object.keys(sessions).length} 个</div>`;
-  html += `<div>🖐️ Hand: ${Object.keys(hands).length} 个</div>`;
-  for (const [name, hand] of Object.entries(hands)) {
-    const tools = (hand.tools || []).join(', ');
-    html += `<div style="padding-left:16px;font-size:11px;color:var(--text2)">  └ ${name}: ${hand.description || ''}</div>`;
-  }
-  html += '</div>';
-  panel.innerHTML = html;
+function switchToSession(id) {
+  state.currentSessionId = id;
+  switchPage('chat', document.querySelector('.nav-item:first-child'));
+  renderChatPage();
 }
+
+async function sendChat() {
+  const input = document.getElementById('chatText');
+  const text = input.value.trim();
+  if (!text || !state.currentSessionId) return;
+  input.value = ''; input.style.height = 'auto';
+
+  // 显示消息
+  const msgs = document.getElementById('chatMessages');
+  const empty = msgs.querySelector('.empty');
+  if (empty) msgs.innerHTML = '';
+  msgs.innerHTML += `<div class="msg-row user"><div class="avatar" style="background:rgba(63,185,80,.15);color:var(--accent2)">👤</div><div class="body"><div class="header"><span class="name">你</span><span class="time">${new Date().toLocaleTimeString()}</span></div><div class="text">${escHtml(text)}</div></div></div>`;
+  msgs.scrollTop = msgs.scrollHeight;
+
+  document.getElementById('sendBtn').disabled = true;
+  try {
+    const res = await fetch(`/api/sessions/${state.currentSessionId}/send`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ text }),
+    });
+    const data = await res.json();
+    if (data.results) {
+      for (const r of data.results) {
+        if (r.text) {
+          msgs.innerHTML += `<div class="msg-row"><div class="avatar" style="background:rgba(88,166,255,.15);color:var(--accent)">🤖</div><div class="body"><div class="header"><span class="name">${r.agent||'AI'}</span><span class="time">${new Date().toLocaleTimeString()}</span></div><div class="text">${escHtml(r.text.slice(0,500))}</div></div></div>`;
+        }
+        if (r.error) {
+          msgs.innerHTML += `<div class="msg-row"><div class="avatar" style="background:rgba(248,81,73,.15);color:var(--danger)">⚠️</div><div class="body"><div class="text" style="color:var(--danger)">${r.agent}: ${escHtml(r.error)}</div></div></div>`;
+        }
+        // master mode
+        if (r.master) {
+          msgs.innerHTML += `<div class="msg-row"><div class="avatar" style="background:rgba(188,140,255,.15);color:var(--purple)">👑</div><div class="body"><div class="text">${escHtml(r.master.text||'').slice(0,500)}</div></div></div>`;
+        }
+        if (r.workers) {
+          for (const w of r.workers) {
+            if (w.text) msgs.innerHTML += `<div class="msg-row"><div class="avatar" style="background:rgba(210,153,34,.15);color:var(--accent3)">👷</div><div class="body"><div class="header"><span class="name">${w.agent}</span></div><div class="text">${escHtml(w.text).slice(0,500)}</div></div></div>`;
+          }
+        }
+      }
+    }
+    msgs.scrollTop = msgs.scrollHeight;
+  } catch(e) { console.error(e); }
+  document.getElementById('sendBtn').disabled = false;
+}
+
+// ====== Modal ======
+function openModal(id) { document.getElementById(id).classList.add('show'); }
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
 
 // ====== Utils ======
-function escapeHtml(text) {
-  if (!text) return '';
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
-}
+function escHtml(t) { if (!t) return ''; const d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
 
 // ====== Init ======
 init();

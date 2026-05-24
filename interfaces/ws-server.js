@@ -49,9 +49,64 @@ class ModulWebServer {
       return this._json(res, 200, this.app.status());
     }
 
+    // API: 获取模型供应商列表（预置模板）
+    if (url === '/api/providers' && method === 'GET') {
+      return this._json(res, 200, this._getProviderTemplates());
+    }
+
     // API: 获取 Agent 列表
     if (url === '/api/agents' && method === 'GET') {
       return this._json(res, 200, this.app.registry.list());
+    }
+
+    // API: 获取 Agent 详情
+    const agentDetailMatch = url.match(/^\/api\/agents\/(.+)$/);
+    if (agentDetailMatch && method === 'GET') {
+      try {
+        const detail = this.app.registry.getDetail(decodeURIComponent(agentDetailMatch[1]));
+        return this._json(res, 200, detail);
+      } catch {
+        return this._json(res, 404, { error: 'Agent not found' });
+      }
+    }
+
+    // API: 注册新 Agent
+    if (url === '/api/agents' && method === 'POST') {
+      return this._parseBody(req).then(body => {
+        try {
+          const agent = this.app.registry.register(body.name || body.model, body);
+          return this._json(res, 200, { ok: true, agent });
+        } catch (err) {
+          return this._json(res, 400, { error: err.message });
+        }
+      });
+    }
+
+    // API: 更新 Agent
+    if (agentDetailMatch && method === 'PUT') {
+      return this._parseBody(req).then(body => {
+        try {
+          const agent = this.app.registry.update(decodeURIComponent(agentDetailMatch[1]), body);
+          return this._json(res, 200, { ok: true, agent });
+        } catch (err) {
+          return this._json(res, 400, { error: err.message });
+        }
+      });
+    }
+
+    // API: 删除 Agent
+    if (agentDetailMatch && method === 'DELETE') {
+      try {
+        this.app.registry.remove(decodeURIComponent(agentDetailMatch[1]));
+        return this._json(res, 200, { ok: true });
+      } catch (err) {
+        return this._json(res, 400, { error: err.message });
+      }
+    }
+
+    // API: 获取模型供应商列表（预置模板）
+    if (url === '/api/providers' && method === 'GET') {
+      return this._json(res, 200, this._getProviderTemplates());
     }
 
     // API: 获取会话列表
@@ -259,6 +314,69 @@ class ModulWebServer {
   }
 
   // ====== 工具 ======
+  _getProviderTemplates() {
+    return {
+      providers: [
+        {
+          id: 'openai',
+          name: 'OpenAI',
+          models: ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo', 'gpt-3.5-turbo'],
+          defaultBaseUrl: 'https://api.openai.com/v1',
+          type: 'api',
+        },
+        {
+          id: 'deepseek',
+          name: 'DeepSeek',
+          models: ['deepseek-chat', 'deepseek-reasoner'],
+          defaultBaseUrl: 'https://api.deepseek.com',
+          type: 'api',
+        },
+        {
+          id: 'anthropic',
+          name: 'Anthropic Claude',
+          models: ['claude-sonnet-4', 'claude-3.5-sonnet', 'claude-3-opus'],
+          defaultBaseUrl: 'https://api.anthropic.com',
+          type: 'api',
+        },
+        {
+          id: 'google',
+          name: 'Google Gemini',
+          models: ['gemini-2.0-flash', 'gemini-2.0-pro', 'gemini-1.5-pro'],
+          defaultBaseUrl: 'https://generativelanguage.googleapis.com/v1beta',
+          type: 'api',
+        },
+        {
+          id: 'openrouter',
+          name: 'OpenRouter',
+          models: ['openai/gpt-4o', 'anthropic/claude-sonnet-4', 'google/gemini-2.0-flash', 'deepseek/deepseek-chat'],
+          defaultBaseUrl: 'https://openrouter.ai/api/v1',
+          type: 'api',
+        },
+        {
+          id: 'siliconflow',
+          name: 'SiliconFlow（硅基流动）',
+          models: ['Qwen/Qwen2.5-72B-Instruct', 'deepseek-ai/DeepSeek-V3', 'THUDM/glm-4-9b-chat'],
+          defaultBaseUrl: 'https://api.siliconflow.cn/v1',
+          type: 'api',
+        },
+        {
+          id: 'custom',
+          name: '自定义 OpenAI 兼容',
+          models: ['自定义模型名'],
+          defaultBaseUrl: 'https://your-api-endpoint.com/v1',
+          type: 'api',
+        },
+        {
+          id: 'cli',
+          name: '命令行（CLI）',
+          models: ['hermes', 'openclaw', '其他 CLI 程序'],
+          defaultBaseUrl: '',
+          type: 'cli',
+        },
+      ],
+    };
+  }
+
   _json(res, status, data) {
     res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' });
     res.end(JSON.stringify(data));
