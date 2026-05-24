@@ -9,15 +9,10 @@ const fs = require('fs');
 const path = require('path');
 
 class SessionManager {
-  constructor({ sharedRoot = './shared', outputsRoot = './outputs', persistPath = '' } = {}) {
+  constructor({ outputsRoot = './outputs', persistPath = '' } = {}) {
     this.sessions = new Map();
-    this.sharedRoot = path.resolve(sharedRoot);
     this.outputsRoot = path.resolve(outputsRoot);
-    this.persistPath = persistPath || path.join(path.resolve(outputsRoot, '..'), 'sessions.json');
-    // 确保共享目录存在
-    if (!fs.existsSync(this.sharedRoot)) {
-      fs.mkdirSync(this.sharedRoot, { recursive: true });
-    }
+    this.persistPath = persistPath || path.join(this.outputsRoot, '..', 'sessions.json');
     // 确保产出目录存在
     if (!fs.existsSync(this.outputsRoot)) {
       fs.mkdirSync(this.outputsRoot, { recursive: true });
@@ -74,7 +69,7 @@ class SessionManager {
   }
 
   // 创建会话
-  create({ name, agents = [], orchestrator = 'broadcast', sharedDir = '' } = {}) {
+  create({ name, agents = [], orchestrator = 'broadcast' } = {}) {
     const id = this._genId();
     // 产出子目录名称: 会话ID_名称
     const safeName = (name || `session-${id.slice(0, 8)}`).replace(/[^a-zA-Z0-9_\u4e00-\u9fff-]/g, '_');
@@ -85,17 +80,13 @@ class SessionManager {
       agents: [...agents],           // Agent 名称列表
       orchestrator,                   // broadcast | direct | chain | master
       messages: [],                   // 消息历史
-      sharedDir: sharedDir || path.join(this.sharedRoot, id),
+      sharedDir: outputDir,  // 共享目录 = 产出目录，不再分开
       outputDir,                      // 产出目录
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       metadata: {},
     };
 
-    // 确保会话的共享目录存在
-    if (!fs.existsSync(session.sharedDir)) {
-      fs.mkdirSync(session.sharedDir, { recursive: true });
-    }
     // 确保产出目录存在
     if (!fs.existsSync(outputDir)) {
       fs.mkdirSync(outputDir, { recursive: true });

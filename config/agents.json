@@ -25,11 +25,13 @@
     "command": "hermes chat -q \"{input}\"",
     "workingDir": "/home/nec-8",
     "hands": [
-      "files"
+      "files",
+      "shell",
+      "web-search"
     ],
     "metadata": {},
     "createdAt": "2026-05-24T13:45:04.218Z",
-    "updatedAt": "2026-05-24T14:08:12.696Z"
+    "updatedAt": "2026-05-24T16:03:53.139Z"
   },
   "lobster": {
     "name": "lobster",
@@ -41,10 +43,26 @@
     "command": "/home/nec-8/.npm-global/bin/openclaw agent --local -m '{input}' --agent main --json",
     "workingDir": "/home/nec-8",
     "hands": [
-      "files"
+      "files",
+      "shell",
+      "web-search"
     ],
     "metadata": {},
     "createdAt": "2026-05-24T13:45:04.218Z",
-    "updatedAt": "2026-05-24T13:57:50.837Z"
+    "updatedAt": "2026-05-24T16:03:52.783Z"
+  },
+  "阿里云百炼": {
+    "name": "阿里云百炼",
+    "type": "api",
+    "provider": "aliyun-bailian",
+    "model": "qwen3.6-flash",
+    "apiKey": "sk-17d5cfa6a2c94c1887a8184db1d4fbaa",
+    "baseUrl": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+    "command": "",
+    "workingDir": "",
+    "hands": [],
+    "metadata": {},
+    "createdAt": "2026-05-24T15:35:11.050Z",
+    "updatedAt": "2026-05-24T15:36:45.801Z"
   }
 }
