@@ -535,12 +535,15 @@ async function init() {
   renderAgentTable();
   renderSessionTable();
   renderChatSessionList();
-  // 如果有会话，默认选中第一个
-  const entries = Object.entries(state.sessions);
-  if (entries.length > 0 && !state.currentSessionId) {
-    switchToSession(entries[0][0]);
-  } else if (state.currentSessionId) {
-    renderChatPage();
+  // 恢复上次选中的会话（localStorage 持久化）
+  const lastId = localStorage.getItem('currentSessionId');
+  if (lastId && state.sessions[lastId]) {
+    switchToSession(lastId);
+  } else {
+    const entries = Object.entries(state.sessions);
+    if (entries.length > 0) {
+      switchToSession(entries[0][0]);
+    }
   }
 }
 
@@ -1014,6 +1017,7 @@ async function deleteSession(id) {
   await fetch(`/api/sessions/${id}`, { method: 'DELETE' });
   if (state.currentSessionId === id) {
     state.currentSessionId = null;
+    localStorage.removeItem('currentSessionId');
     renderChatPage();
   }
   await loadSessions();
@@ -1068,6 +1072,7 @@ function renderChatPage() {
 
 function switchToSession(id) {
   state.currentSessionId = id;
+  localStorage.setItem('currentSessionId', id); // 记住选中
   switchPage('chat', document.querySelectorAll('.nav-item')[0]);
   renderChatPage();
   renderChatSessionList();
