@@ -415,9 +415,10 @@ tr:hover td{background:var(--bg3)}
       <div class="form-group">
         <label>群成员</label>
         <div id="newSessionRoleList"></div>
-        <div id="newSessionAddRole" style="margin-top:8px;">
-          <select id="newRoleAgentSelect" style="width:auto;min-width:140px;margin-right:8px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-size:13px"></select>
-          <button class="btn btn-sm" onclick="addNewSessionRole()">➕ 添加成员</button>
+        <div id="newSessionAddRole" style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+          <select id="newRoleModelSelect" style="min-width:140px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-size:13px"></select>
+          <input id="newRoleName" placeholder="角色名" style="flex:1;min-width:100px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-size:13px">
+          <button class="btn btn-sm" onclick="addNewSessionRole()">➕ 添加</button>
         </div>
       </div>
     </div>
@@ -455,9 +456,10 @@ tr:hover td{background:var(--bg3)}
       <div class="form-group">
         <label>群成员</label>
         <div id="settingsRoleList"></div>
-        <div id="settingsAddRole" style="margin-top:8px;">
-          <select id="settingsRoleAgentSelect" style="width:auto;min-width:140px;margin-right:8px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-size:13px"></select>
-          <button class="btn btn-sm" onclick="addSettingsRole()">➕ 添加成员</button>
+        <div id="settingsAddRole" style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+          <select id="settingsRoleModelSelect" style="min-width:140px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-size:13px"></select>
+          <input id="settingsRoleName" placeholder="角色名" style="flex:1;min-width:100px;background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-size:13px">
+          <button class="btn btn-sm" onclick="addSettingsRole()">➕ 添加</button>
         </div>
       </div>
     </div>
@@ -507,7 +509,7 @@ function findRoleForAgent(agentName) {
   if (!state.currentSessionId) return null;
   const session = state.sessions[state.currentSessionId];
   if (!session || !session.roles) return null;
-  return session.roles.find(r => r.agentName === agentName) || null;
+  return session.roles.find(r => r.id === agentName || r.name === agentName) || null;
 }
 
 function handleStreamEvent(event) {
@@ -524,7 +526,7 @@ function handleStreamEvent(event) {
     streamState.msgRowId = 'msg_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
     const role = findRoleForAgent(event.data.agent);
     const icon = role ? role.icon : '🤖';
-    const displayName = role ? role.title : event.data.agent;
+    const displayName = role ? (role.name || role.title || event.data.agent) : event.data.agent;
     const isLeader = role && role.isLeader;
     const nameClass = isLeader ? 'class="name leader"' : 'class="name"';
     const color = role ? 'rgba(88,166,255,.12)' : 'rgba(128,128,128,.12)';
@@ -969,21 +971,7 @@ function renderChatSessionList() {
   }).join('');
 }
 
-// ====== QQ群风格 — 角色管理 ======
-
-// 在新建/设置弹窗中打开前重建 Agent 下拉选项
-function populateAgentSelect(selectId, excludeNames = []) {
-  const sel = document.getElementById(selectId);
-  if (!sel) return;
-  const entries = Object.entries(state.agents);
-  sel.innerHTML = entries
-    .filter(([name]) => !excludeNames.includes(name))
-    .map(([name, a]) => {
-      const icon = agentIcon(name);
-      const modelLabel = a.model || a.command || '';
-      return `<option value="${name}">${icon} ${name}${modelLabel ? ' (' + escAttr(modelLabel) + ')' : ''}</option>`;
-    }).join('');
-}
+// ====== 角色管理 ======
 
 function agentIcon(name) {
   const iconMap = { deepseek:'🧠', gpt:'🟢', claude:'🟣', hermes:'⚡', lobster:'🦞', openclaw:'🦞', qiwen:'🔮', qwen:'🔮', baidu:'🐻', hunyuan:'🌀', spark:'🔥', gemini:'🔷' };
@@ -991,21 +979,33 @@ function agentIcon(name) {
   return k ? iconMap[k] : '🤖';
 }
 
-// 默认角色数据
-function defaultRoleForAgent(agentName) {
-  const iconMap = { deepseek:'🧠', gpt:'🟢', claude:'🟣', hermes:'⚡', lobster:'🦞', openclaw:'🦞', qiwen:'🔮', qwen:'🔮', baidu:'🐻', hunyuan:'🌀', spark:'🔥', gemini:'🔷' };
-  const k = Object.keys(iconMap).find(k => agentName.toLowerCase().includes(k));
-  return { agentName, title: agentName, icon: k ? iconMap[k] : '🤖', model: '', description: '', tags: [], isLeader: false };
+// 创建空角色（人设与模型解耦）
+function createEmptyRole() {
+  const id = 'role_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 6);
+  return { id, name: '', modelAgent: '', icon: '🤖', description: '', tags: [], isLeader: false };
 }
 
-// 新会话弹窗
+// 填充模型下拉框
+function populateModelSelect(selectId, excludeAgents = []) {
+  const sel = document.getElementById(selectId);
+  if (!sel) return;
+  const entries = Object.entries(state.agents);
+  sel.innerHTML = '<option value="">— 选择驱动模型 —</option>' +
+    entries
+    .filter(([name]) => !excludeAgents.includes(name))
+    .map(([name, a]) => {
+      const icon = agentIcon(name);
+      const modelLabel = a.model || a.command || '';
+      return `<option value="${name}">${icon} ${name}${modelLabel ? ' (' + escAttr(modelLabel) + ')' : ''}</option>`;
+    }).join('');
+}
+
+// 新会话弹窗 — 初始空角色列表
 function openNewSession() {
   document.getElementById('sessionName').value = '新群组 ' + new Date().toLocaleTimeString();
-  // 从所有 Agent 生成初始角色
-  const entries = Object.entries(state.agents);
-  state._newSessionRoles = entries.map(([name]) => defaultRoleForAgent(name));
+  state._newSessionRoles = [];
   renderNewSessionRoleList();
-  populateAgentSelect('newRoleAgentSelect', entries.map(([n]) => n));
+  populateModelSelect('newRoleModelSelect');
   openModal('newSessionModal');
 }
 
@@ -1020,19 +1020,25 @@ function renderNewSessionRoleList() {
 }
 
 function addNewSessionRole() {
-  const sel = document.getElementById('newRoleAgentSelect');
-  const name = sel.value;
-  if (!name) return;
-  if ((state._newSessionRoles || []).some(r => r.agentName === name)) return;
-  state._newSessionRoles.push(defaultRoleForAgent(name));
+  const modelSel = document.getElementById('newRoleModelSelect');
+  const nameInput = document.getElementById('newRoleName');
+  const modelAgent = modelSel.value;
+  const roleName = nameInput.value.trim();
+  if (!modelAgent) return alert('请选择驱动模型');
+  if (!roleName) return alert('请输入角色名');
+  if ((state._newSessionRoles || []).some(r => r.name === roleName)) return alert('角色名已存在');
+  const role = createEmptyRole();
+  role.name = roleName;
+  role.modelAgent = modelAgent;
+  state._newSessionRoles.push(role);
   renderNewSessionRoleList();
-  populateAgentSelect('newRoleAgentSelect', state._newSessionRoles.map(r => r.agentName));
+  modelSel.value = '';
+  nameInput.value = '';
 }
 
 function removeNewSessionRole(idx) {
   state._newSessionRoles.splice(idx, 1);
   renderNewSessionRoleList();
-  populateAgentSelect('newRoleAgentSelect', state._newSessionRoles.map(r => r.agentName));
 }
 
 function updateNewRoleField(idx, field, value) {
@@ -1045,10 +1051,10 @@ function openSessionSettings() {
   const session = state.sessions[state.currentSessionId];
   if (!session) return;
   document.getElementById('settingsSessionName').value = session.name || '';
-  const roles = session.roles || (session.agents||[]).map(a => defaultRoleForAgent(a));
+  const roles = session.roles || [];
   state._settingsRoles = JSON.parse(JSON.stringify(roles));
   renderSettingsRoleList();
-  populateAgentSelect('settingsRoleAgentSelect', state._settingsRoles.map(r => r.agentName));
+  populateModelSelect('settingsRoleModelSelect');
   document.getElementById('settingsOrchestrator').value = session.orchestrator || 'broadcast';
   openModal('sessionSettingsModal');
 }
@@ -1064,19 +1070,25 @@ function renderSettingsRoleList() {
 }
 
 function addSettingsRole() {
-  const sel = document.getElementById('settingsRoleAgentSelect');
-  const name = sel.value;
-  if (!name) return;
-  if ((state._settingsRoles || []).some(r => r.agentName === name)) return;
-  state._settingsRoles.push(defaultRoleForAgent(name));
+  const modelSel = document.getElementById('settingsRoleModelSelect');
+  const nameInput = document.getElementById('settingsRoleName');
+  const modelAgent = modelSel.value;
+  const roleName = nameInput.value.trim();
+  if (!modelAgent) return alert('请选择驱动模型');
+  if (!roleName) return alert('请输入角色名');
+  if ((state._settingsRoles || []).some(r => r.name === roleName)) return alert('角色名已存在');
+  const role = createEmptyRole();
+  role.name = roleName;
+  role.modelAgent = modelAgent;
+  state._settingsRoles.push(role);
   renderSettingsRoleList();
-  populateAgentSelect('settingsRoleAgentSelect', state._settingsRoles.map(r => r.agentName));
+  modelSel.value = '';
+  nameInput.value = '';
 }
 
 function removeSettingsRole(idx) {
   state._settingsRoles.splice(idx, 1);
   renderSettingsRoleList();
-  populateAgentSelect('settingsRoleAgentSelect', state._settingsRoles.map(r => r.agentName));
 }
 
 function updateSettingsRoleField(idx, field, value) {
@@ -1091,23 +1103,23 @@ function renderRoleCard(role, idx, prefix) {
     : '';
   const leaderBadge = role.isLeader ? '<span class="leader-badge">👑 组长</span>' : '';
   const descHtml = role.description ? `<div style="font-size:10px;color:var(--text3);margin-top:1px">${escHtml(role.description)}</div>` : '';
-  // 查看 agent 配置来显示模型信息
-  const agentCfg = state.agents[role.agentName];
-  const modelInfo = agentCfg ? (agentCfg.model || agentCfg.command || '') : '';
-  const typeLabel = agentCfg ? (agentCfg.type === 'cli' ? '🔧' : '☁️') : '';
+  // 查模型信息
+  const agentCfg = state.agents[role.modelAgent];
+  const modelInfo = agentCfg ? (agentCfg.model || agentCfg.command || '') : '(模型未注册)';
+  const typeLabel = agentCfg ? (agentCfg.type === 'cli' ? '🔧' : '☁️') : '❌';
 
   return `<div class="role-card">
     <div class="role-icon" style="background:rgba(88,166,255,.12)">${role.icon || '🤖'}</div>
     <div class="role-info">
-      <div class="role-name">${escHtml(role.title)} ${leaderBadge} <span style="font-size:9px;color:var(--text3);font-weight:400">${typeLabel} ${escHtml(modelInfo)}</span></div>
-      <div class="role-meta">@${escHtml(role.agentName)}</div>
+      <div class="role-name">${escHtml(role.name)} ${leaderBadge} <span style="font-size:9px;color:var(--text3);font-weight:400">${typeLabel} ${escHtml(modelInfo)}</span></div>
+      <div class="role-meta">🚀 ${escHtml(role.modelAgent)}${role.id ? ' · id:' + escHtml(role.id) : ''}</div>
       ${descHtml}
       ${tagsHtml}
       <div class="role-edit-fields">
         <input value="${escAttr(role.icon||'🤖')}" placeholder="头像" oninput="update${prefix==='new'?'New':'Settings'}RoleField(${idx},'icon',this.value)" style="max-width:50px">
-        <input value="${escAttr(role.title)}" placeholder="头衔" oninput="update${prefix==='new'?'New':'Settings'}RoleField(${idx},'title',this.value)">
+        <input value="${escAttr(role.name)}" placeholder="角色名" oninput="update${prefix==='new'?'New':'Settings'}RoleField(${idx},'name',this.value)">
         <input value="${escAttr(role.description||'')}" placeholder="角色描述（可选）" oninput="update${prefix==='new'?'New':'Settings'}RoleField(${idx},'description',this.value)" style="flex:2">
-        <input value="${escAttr((role.tags||[]).join(','))}" placeholder="能力标签空格隔开" oninput="update${prefix==='new'?'New':'Settings'}RoleField(${idx},'tags',this.value.split(',').map(s=>s.trim()).filter(Boolean))" style="flex:1.5">
+        <input value="${escAttr((role.tags||[]).join(','))}" placeholder="能力标签逗号隔开" oninput="update${prefix==='new'?'New':'Settings'}RoleField(${idx},'tags',this.value.split(',').map(s=>s.trim()).filter(Boolean))" style="flex:1.5">
         <select onchange="update${prefix==='new'?'New':'Settings'}RoleField(${idx},'isLeader',this.value)" style="max-width:80px">
           <option value="false" ${role.isLeader?'':'selected'}>组员</option>
           <option value="true" ${role.isLeader?'selected':''}>👑组长</option>
@@ -1221,7 +1233,7 @@ function renderChatPage() {
     membersEl.style.display = 'block';
     membersEl.innerHTML = `<div class="group-member-list">${roles.map(r => {
       const isLeader = r.isLeader ? '<span class="leader-star">👑</span>' : '';
-      return `<div class="group-member-item" title="${escAttr(r.description||r.title)}"><span class="gmi-icon" style="background:rgba(88,166,255,.12)">${r.icon||'🤖'}</span>${escHtml(r.title)}${isLeader}</div>`;
+      return `<div class="group-member-item" title="${escAttr(r.description||r.name)}"><span class="gmi-icon" style="background:rgba(88,166,255,.12)">${r.icon||'🤖'}</span>${escHtml(r.name)}${isLeader}</div>`;
     }).join('')}</div>`;
   } else {
     membersEl.style.display = 'none';
@@ -1237,9 +1249,9 @@ function renderChatPage() {
         } else {
           // 找到角色信息
           const agentName = m.agent || '';
-          const role = roles.find(r => r.agentName === agentName);
+          const role = roles.find(r => r.id === agentName);
           const icon = (role && role.icon) ? role.icon : '🤖';
-          const displayName = (role && role.title) ? role.title : agentName;
+          const displayName = (role && role.name) ? role.name : agentName;
           const isLeader = role && role.isLeader;
           const nameClass = isLeader ? 'class="name leader"' : 'class="name"';
           const color = role ? 'rgba(88,166,255,.12)' : 'rgba(128,128,128,.12)';

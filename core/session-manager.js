@@ -1,7 +1,11 @@
 // ============================================================
 // Session Manager — 会话管理器
 // ============================================================
-// 管理多个独立会话，每个会话包含参与 Agent、消息历史和产出目录。
+// 管理多个独立会话，每个会话包含参与角色（人设）、消息历史和产出目录。
+// 角色（人设）与模型（Agent）已解耦：
+//   - 角色 = 人设（产品经理、前端开发）
+//   - 角色.modelAgent = 驱动该角色的大模型名称（deepseek、hermes 等）
+//   同一个大模型可驱动多个不同角色。
 // 自动持久化到 sessions.json，启动时恢复。
 // 每个会话的产出目录：outputs/<会话ID_名称>/
 // ============================================================
@@ -57,22 +61,49 @@ class SessionManager {
       if (!Array.isArray(data)) return;
       for (const s of data) {
         // 确保目录存在
-        if (!fs.existsSync(s.sharedDir)) {
+        if (s.sharedDir && !fs.existsSync(s.sharedDir)) {
           try { fs.mkdirSync(s.sharedDir, { recursive: true }); } catch {}
         }
-        if (!fs.existsSync(s.outputDir)) {
+        if (s.outputDir && !fs.existsSync(s.outputDir)) {
           try { fs.mkdirSync(s.outputDir, { recursive: true }); } catch {}
         }
-        // 兼容旧版：没有 roles 时从 agents 生成
-        if (!s.roles) {
-          s.roles = (s.agents || []).map(a => this._defaultRole(a));
+
+        // === 向后兼容：旧版 roles 结构（带 agentName）→ 新版（带 id/name/modelAgent）===
+        if (s.roles) {
+          s.roles = s.roles.map(r => this._migrateRole(r));
+        } else if (s.agents) {
+          // 连 roles 都没有：从 agents 数组生成默认角色
+          s.roles = s.agents.map(a => this._defaultRoleV2(a));
         }
+
+        // 保证 agents 字段同步
+        if (s.roles) {
+          s.agents = s.roles.map(r => r.id);
+        }
+
         this.sessions.set(s.id, s);
       }
       console.log(`[Session] ✅ 已恢复 ${data.length} 个持久化会话`);
     } catch (e) {
       console.error(`[Session] ⚠️ 加载持久化会话失败: ${e.message}`);
     }
+  }
+
+  // 旧角色 → 新角色迁移
+  _migrateRole(role) {
+    // 如果已经是新格式（有 modelAgent 字段），直接返回
+    if (role.modelAgent) return role;
+    // 旧格式：{ agentName, title, icon, ... }
+    // → 新格式：{ id, name, modelAgent: agentName, icon, ... }
+    return {
+      id: role.agentName || role.id || 'unknown',
+      name: role.title || role.name || role.agentName || 'unknown',
+      modelAgent: role.modelAgent || role.agentName || 'unknown',
+      icon: role.icon || '🤖',
+      description: role.description || '',
+      tags: role.tags || [],
+      isLeader: role.isLeader || false,
+    };
   }
 
   // 创建会话
@@ -82,18 +113,25 @@ class SessionManager {
     const safeName = (name || `session-${id.slice(0, 8)}`).replace(/[^a-zA-Z0-9_\u4e00-\u9fff-]/g, '_');
     const outputDir = path.join(this.outputsRoot, `${id}_${safeName}`);
 
-    // 如果没有 roles，从 agents 自动生成
-    const computedRoles = roles || agents.map(a => this._defaultRole(a));
+    // 新版 roles（传了直接用，没传则从旧版 agents 生成）
+    const computedRoles = roles
+      ? roles.map(r => typeof r.modelAgent !== 'undefined' ? r : this._migrateRole(r))
+      : agents.map(a => this._defaultRoleV2(a));
+
+    // 为没有 id 的新角色自动生成
+    for (const r of computedRoles) {
+      if (!r.id) r.id = this._genShortId();
+    }
 
     const session = {
       id,
       name: name || `session-${id.slice(0, 8)}`,
-      agents: computedRoles.map(r => r.agentName), // 兼容旧字段
+      agents: computedRoles.map(r => r.id),  // 存 role.id
       roles: computedRoles,
-      orchestrator,                   // broadcast | direct | chain | master
-      messages: [],                   // 消息历史
-      sharedDir: outputDir,  // 共享目录 = 产出目录，不再分开
-      outputDir,                      // 产出目录
+      orchestrator,
+      messages: [],
+      sharedDir: outputDir,
+      outputDir,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       metadata: {},
@@ -145,7 +183,7 @@ class SessionManager {
     return result;
   }
 
-  // 添加模型到会话
+  // 添加模型到会话（兼容旧接口）
   addAgent(sessionId, agentName) {
     const session = this.get(sessionId);
     if (session.agents.includes(agentName)) {
@@ -153,16 +191,20 @@ class SessionManager {
       return session;
     }
     session.agents.push(agentName);
+    // 同时添加一个默认角色
+    if (!session.roles) session.roles = [];
+    session.roles.push(this._defaultRoleV2(agentName));
     session.updatedAt = new Date().toISOString();
     console.log(`[Session] ➕ Agent "${agentName}" 加入会话 "${session.name}"`);
     this._savePersisted();
     return session;
   }
 
-  // 从会话移除模型
+  // 从会话移除模型（兼容旧接口）
   removeAgent(sessionId, agentName) {
     const session = this.get(sessionId);
     session.agents = session.agents.filter(a => a !== agentName);
+    session.roles = (session.roles || []).filter(r => r.id !== agentName);
     session.updatedAt = new Date().toISOString();
     console.log(`[Session] ➖ Agent "${agentName}" 离开会话 "${session.name}"`);
     this._savePersisted();
@@ -175,7 +217,8 @@ class SessionManager {
     const msg = {
       id: session.messages.length + 1,
       role: message.role || 'user',
-      agent: message.agent || null,   // 哪个 Agent 发的
+      agent: message.agent || null,   // 哪个角色发的（存 role.id）
+      modelAgent: message.modelAgent || null, // 实际驱动模型（可选）
       content: message.content || '',
       toolCalls: message.toolCalls || null,
       toolResults: message.toolResults || null,
@@ -199,11 +242,10 @@ class SessionManager {
     return session.messages.slice(-limit);
   }
 
-  // 获取某 Agent 在会话中看到的历史（排除其他 Agent 的工具调用细节）
-  getMessagesForAgent(sessionId, agentName) {
+  // 获取某 Agent 在会话中看到的历史
+  getMessagesForAgent(sessionId, agentOrRoleId) {
     const session = this.get(sessionId);
     return session.messages.map(m => {
-      // 给模型看的信息，过滤掉不必要的工具内部细节
       const msg = {
         role: m.role,
         agent: m.agent,
@@ -213,7 +255,14 @@ class SessionManager {
     });
   }
 
-  // 设置会话 orcherstrator 模式
+  // 根据 role.id 查找对应的模型 Agent 名称
+  getModelAgentForRole(sessionId, roleId) {
+    const session = this.get(sessionId);
+    const role = (session.roles || []).find(r => r.id === roleId);
+    return role ? role.modelAgent : roleId; // fallback 到 roleId 本身（兼容旧版）
+  }
+
+  // 更新会话
   update(sessionId, data) {
     if (!this.sessions.has(sessionId)) {
       throw new Error(`会话 ${sessionId} 不存在`);
@@ -222,8 +271,13 @@ class SessionManager {
     if (data.name) session.name = data.name;
     if (data.agents) session.agents = data.agents;
     if (data.roles) {
-      session.roles = data.roles;
-      session.agents = data.roles.map(r => r.agentName);
+      // 迁移旧版 roles
+      session.roles = data.roles.map(r => {
+        const migrated = typeof r.modelAgent !== 'undefined' ? r : this._migrateRole(r);
+        if (!migrated.id) migrated.id = this._genShortId();
+        return migrated;
+      });
+      session.agents = session.roles.map(r => r.id);
     }
     if (data.orchestrator) session.orchestrator = data.orchestrator;
     session.updatedAt = new Date().toISOString();
@@ -295,9 +349,12 @@ class SessionManager {
     return crypto.randomBytes(8).toString('hex');
   }
 
-  // 从 Agent 名称生成默认角色
-  _defaultRole(agentName) {
-    // 尝试取注册表信息来推断模型等信息
+  _genShortId() {
+    return crypto.randomBytes(3).toString('hex');
+  }
+
+  // 新版默认角色（角色与模型解耦）
+  _defaultRoleV2(agentName) {
     const iconMap = {
       'deepseek': '🧠',
       'gpt': '🟢',
@@ -308,10 +365,10 @@ class SessionManager {
     };
     const matchedKey = Object.keys(iconMap).find(k => agentName.toLowerCase().includes(k));
     return {
-      agentName,
-      title: agentName,
+      id: agentName,
+      name: agentName,
+      modelAgent: agentName,
       icon: matchedKey ? iconMap[matchedKey] : '🤖',
-      model: '',
       description: '',
       tags: [],
       isLeader: false,
