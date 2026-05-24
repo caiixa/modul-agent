@@ -164,6 +164,7 @@ tr:hover td{background:var(--bg3)}
   <div class="page" id="pageTools">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
       <div style="font-size:12px;color:var(--text2)">管理工具插件（Hand），绑定到本机 CLI 代理</div>
+      <button class="btn btn-primary" onclick="openAddCliAgent()">+ 添加本机代理</button>
     </div>
     <div class="card">
       <div class="card-header"><h3>可用工具（Hand 插件）</h3></div>
@@ -175,9 +176,9 @@ tr:hover td{background:var(--bg3)}
       </div>
     </div>
     <div class="card" style="margin-top:16px">
-      <div class="card-header"><h3>本机代理（CLI）</h3></div>
+      <div class="card-header"><h3>本机代理（CLI）</h3><span style="font-size:11px;color:var(--text2)">通过勾选绑定 Hand</span></div>
       <div class="card-body" id="cliAgentHands">
-        <div class="empty"><p>暂无 CLI 类型代理</p><div class="sub">先去「API模型」页面添加 CLI 类型的模型</div></div>
+        <div class="empty"><p>暂无 CLI 类型代理</p><div class="sub">点右上角「添加本机代理」</div></div>
       </div>
     </div>
   </div>
@@ -242,6 +243,35 @@ tr:hover td{background:var(--bg3)}
     <div class="modal-footer">
       <button class="btn" onclick="closeModal('addAgentModal')">取消</button>
       <button class="btn btn-primary" onclick="submitAgent()">添加</button>
+    </div>
+  </div>
+</div>
+
+<!-- ====== Add CLI Agent Modal ====== -->
+<div class="modal-overlay" id="addCliAgentModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>添加本机代理</h3>
+      <button class="modal-close" onclick="closeModal('addCliAgentModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>显示名称</label>
+        <input id="cliAgentName" placeholder="例如: hermes">
+      </div>
+      <div class="form-group">
+        <label>CLI 命令</label>
+        <input id="cliAgentCommand" placeholder='例如: hermes chat -q "{input}"'>
+        <div class="hint">使用 {input} 作为用户消息占位符</div>
+      </div>
+      <div class="form-group">
+        <label>工作目录（可选）</label>
+        <input id="cliAgentWorkdir" placeholder="/home/user/project">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" onclick="closeModal('addCliAgentModal')">取消</button>
+      <button class="btn btn-primary" onclick="submitCliAgent()">添加</button>
     </div>
   </div>
 </div>
@@ -475,7 +505,8 @@ function renderCliAgentHands() {
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
         <strong>${name}</strong>
         <span class="tag tag-cli">CLI</span>
-        <span style="font-size:11px;color:var(--text2)">${a.model}</span>
+        <span style="font-size:11px;color:var(--text2);flex:1">${a.model}</span>
+        <button class="btn btn-sm btn-danger" onclick="deleteCliAgent('${name}')">删除</button>
       </div>
       <div style="display:flex;flex-wrap:wrap;gap:8px">
         ${Object.entries(toolsData.hands).map(([handName]) => {
@@ -500,6 +531,52 @@ async function toggleHandBind(handName, agentName, mount) {
     const data = await res.json();
     if (!data.ok) { alert(data.error || '操作失败'); return; }
     // 刷新数据
+    await Promise.all([loadAgents(), loadTools()]);
+    renderHandTable();
+    renderCliAgentHands();
+  } catch(e) { alert('网络错误'); }
+}
+
+function openAddCliAgent() {
+  document.getElementById('cliAgentName').value = '';
+  document.getElementById('cliAgentCommand').value = '';
+  document.getElementById('cliAgentWorkdir').value = '';
+  openModal('addCliAgentModal');
+}
+
+async function submitCliAgent() {
+  const name = document.getElementById('cliAgentName').value.trim();
+  const command = document.getElementById('cliAgentCommand').value.trim();
+  const workdir = document.getElementById('cliAgentWorkdir').value.trim();
+  if (!name) return alert('请输入代理名称');
+  if (!command) return alert('请输入 CLI 命令');
+  if (state.agents[name]) return alert(`名称 "${name}" 已被占用`);
+
+  try {
+    const res = await fetch('/api/agents', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        name,
+        type: 'cli',
+        command,
+        working_dir: workdir || '',
+      }),
+    });
+    const data = await res.json();
+    if (!data.ok) { alert(data.error || '添加失败'); return; }
+    closeModal('addCliAgentModal');
+    await Promise.all([loadAgents(), loadTools()]);
+    renderHandTable();
+    renderCliAgentHands();
+  } catch(e) { alert('网络错误'); }
+}
+
+async function deleteCliAgent(name) {
+  if (!confirm(`删除本机代理 "${name}"？`)) return;
+  try {
+    const res = await fetch(`/api/agents/${encodeURIComponent(name)}`, { method: 'DELETE' });
+    if (!res.ok) { alert('删除失败'); return; }
     await Promise.all([loadAgents(), loadTools()]);
     renderHandTable();
     renderCliAgentHands();
