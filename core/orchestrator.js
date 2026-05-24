@@ -211,9 +211,13 @@ class Orchestrator {
 
     onEvent({ type: 'agent_start', data: { agent: masterName } });
     const taskPlan = await this._callAgentStream(session, masterName,
-      `你是组长，需要分配任务给以下助手：${workers.join(', ')}\n` +
-      `用户需求：${userMessage}\n请输出任务分配计划，格式：\n` +
-      `@助手A: 任务描述\n@助手B: 任务描述`, onEvent
+      `你是组长，需要分配任务给以下助手：${workers.join(', ')}
+` +
+      `用户需求：${userMessage}
+请输出任务分配计划，格式：
+` +
+      `@助手A: 任务描述
+@助手B: 任务描述`, onEvent
     );
     this.sessionManager.addMessage(session.id, {
       role: 'assistant', agent: masterName, content: taskPlan.text,
@@ -248,9 +252,16 @@ class Orchestrator {
 
     onEvent({ type: 'agent_start', data: { agent: routerName } });
     const routePlan = await this._callAgentStream(session, routerName,
-      `你是智能路由分配器。分析用户消息，从以下助手中选择最合适的一个执行任务。\n\n` +
-      `可用助手：\n${workers.map((w, i) => `${i + 1}. ${w}`).join('\n')}\n\n` +
-      `用户消息：${userMessage}\n\n` +
+      `你是智能路由分配器。分析用户消息，从以下助手中选择最合适的一个执行任务。
+
+` +
+      `可用助手：
+${workers.map((w, i) => `${i + 1}. ${w}`).join('\n')}
+
+` +
+      `用户消息：${userMessage}
+
+` +
       `只回复助手名称。格式：@助手名`, onEvent
     );
     const targetMatch = routePlan.text.match(/@(\w[\w-]*)/);
@@ -289,14 +300,26 @@ class Orchestrator {
     // 裁判
     const judgeName = session.agents[0];
     onEvent({ type: 'agent_start', data: { agent: judgeName } });
-    const judgePrompt = `你是裁判。以下是多个 AI 助手对同一个问题的回答。请选出最佳答案并说明理由。\n\n` +
-      `问题：${userMessage}\n\n` +
-      allResults.map(r => `--- ${r.agent} ---\n${r.text}`).join('\n\n') +
-      `\n\n格式：\n🏆 最佳：@助手名\n理由：...`;
+    const judgePrompt = `你是裁判。以下是多个 AI 助手对同一个问题的回答。请选出最佳答案并说明理由。
+
+` +
+      `问题：${userMessage}
+
+` +
+      allResults.map(r => `--- ${r.agent} ---
+${r.text}`).join(`
+
+`) +
+      `
+
+格式：
+🏆 最佳：@助手名
+理由：...`;
     const judgeResult = await this._callAgentStream(session, judgeName, judgePrompt, onEvent);
     this.sessionManager.addMessage(session.id, {
       role: 'assistant', agent: judgeName,
-      content: `🏆 辩论裁决：\n${judgeResult.text}`,
+      content: `🏆 辩论裁决：
+${judgeResult.text}`,
     });
     onEvent({ type: 'agent_done', data: { agent: judgeName, text: judgeResult.text } });
     return { answers: allResults, verdict: { judge: judgeName, text: judgeResult.text } };
@@ -311,7 +334,10 @@ class Orchestrator {
       const agentName = session.agents[i];
       const stepMessage = (i === 0)
         ? userMessage
-        : `上一步结果：\n${currentInput}\n\n请继续处理。` +
+        : `上一步结果：
+${currentInput}
+
+请继续处理。` +
           (i < session.agents.length - 1 ? ' 处理完后将结果传递给下一步。' : ' 这是最后一步，请给出完整的最终输出。');
       onEvent({ type: 'agent_start', data: { agent: agentName } });
       const result = await this._callAgentStream(session, agentName, stepMessage, onEvent);
@@ -336,9 +362,13 @@ class Orchestrator {
     if (workers.length === 0) return this._broadcast(session, userMessage);
 
     const taskPlan = await this._callAgent(session, masterName,
-      `你是组长，需要分配任务给以下助手：${workers.join(', ')}\n` +
-      `用户需求：${userMessage}\n请输出任务分配计划，格式：\n` +
-      `@助手A: 任务描述\n@助手B: 任务描述`
+      `你是组长，需要分配任务给以下助手：${workers.join(', ')}
+` +
+      `用户需求：${userMessage}
+请输出任务分配计划，格式：
+` +
+      `@助手A: 任务描述
+@助手B: 任务描述`
     );
     this.sessionManager.addMessage(session.id, {
       role: 'assistant', agent: masterName, content: taskPlan.text,
@@ -499,10 +529,18 @@ class Orchestrator {
 
     // 用第一个模型做路由器，分析用户输入
     const routePlan = await this._callAgent(session, routerName,
-      `你是智能路由分配器。分析用户消息，从以下助手中选择最合适的一个执行任务。\n\n` +
-      `可用助手：\n${workers.map((w, i) => `${i + 1}. ${w}`).join('\n')}\n\n` +
-      `用户消息：${userMessage}\n\n` +
-      `请根据每个助手的专长选择最匹配的助手。只回复助手名称，不要多余文字。\n` +
+      `你是智能路由分配器。分析用户消息，从以下助手中选择最合适的一个执行任务。
+
+` +
+      `可用助手：
+${workers.map((w, i) => `${i + 1}. ${w}`).join('\n')}
+
+` +
+      `用户消息：${userMessage}
+
+` +
+      `请根据每个助手的专长选择最匹配的助手。只回复助手名称，不要多余文字。
+` +
       `格式：@助手名`
     );
 
@@ -541,15 +579,27 @@ class Orchestrator {
 
     // 用第一个模型投票
     const judgeName = session.agents[0];
-    const judgePrompt = `你是裁判。以下是多个 AI 助手对同一个问题的回答。请投票选出最佳答案并说明理由。\n\n` +
-      `问题：${userMessage}\n\n` +
-      allResults.map(r => `--- ${r.agent} 的回答 ---\n${r.text}`).join('\n\n') +
-      `\n\n请选出最佳回答，格式：\n🏆 最佳：@助手名\n理由：...`;
+    const judgePrompt = `你是裁判。以下是多个 AI 助手对同一个问题的回答。请投票选出最佳答案并说明理由。
+
+` +
+      `问题：${userMessage}
+
+` +
+      allResults.map(r => `--- ${r.agent} 的回答 ---
+${r.text}`).join(`
+
+`) +
+      `
+
+请选出最佳回答，格式：
+🏆 最佳：@助手名
+理由：...`;
 
     const judgeResult = await this._callAgent(session, judgeName, judgePrompt);
     this.sessionManager.addMessage(session.id, {
       role: 'assistant', agent: judgeName,
-      content: `🏆 辩论裁决：\n${judgeResult.text}`,
+      content: `🏆 辩论裁决：
+${judgeResult.text}`,
     });
 
     return { answers: allResults, verdict: { judge: judgeName, text: judgeResult.text } };
@@ -566,7 +616,10 @@ class Orchestrator {
       const agentName = session.agents[i];
       const stepMessage = (i === 0)
         ? userMessage
-        : `上一步结果：\n${currentInput}\n\n请继续处理。` +
+        : `上一步结果：
+${currentInput}
+
+请继续处理。` +
           (i < session.agents.length - 1 ? ' 处理完后将结果传递给下一步。' : ' 这是最后一步，请给出完整的最终输出。');
 
       const result = await this._callAgent(session, agentName, stepMessage);
@@ -588,7 +641,10 @@ class Orchestrator {
       return `[错误: Agent "${toAgent}" 不在当前会话中]`;
     }
     const result = await this._callAgent(session, toAgent,
-      `[来自 ${fromAgent} 的消息]\n${question}\n\n请直接回答。`
+      `[来自 ${fromAgent} 的消息]
+${question}
+
+请直接回答。`
     );
     this.sessionManager.addMessage(session.id, {
       role: 'assistant', agent: toAgent,
