@@ -132,8 +132,15 @@ tr:hover td{background:var(--bg3)}
 
   <!-- ====== Chat Page ====== -->
   <div class="page active" id="pageChat" style="display:flex;flex-direction:column;height:100%">
+    <div style="display:flex;align-items:center;gap:8px;padding:8px 16px;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0">
+      <select id="chatSessionSelect" style="flex:1;padding:6px 10px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:12px;font-family:inherit;outline:none;cursor:pointer"
+        onchange="switchToSession(this.value)">
+        <option value="">— 选择会话 —</option>
+      </select>
+      <button class="btn btn-sm btn-primary" onclick="openNewSession()" title="新建会话">+ 新建</button>
+    </div>
     <div class="chat-messages" id="chatMessages">
-      <div class="empty"><div class="icon">🧠</div><p>选择一个会话开始聊天</p><div class="sub">先在左侧切换到「会话」创建或选择</div></div>
+      <div class="empty"><div class="icon">💬</div><p>选择或创建一个会话开始聊天</p></div>
     </div>
     <div class="chat-input" id="chatInput" style="display:none">
       <textarea id="chatText" placeholder="发消息...（按 Enter 发送）" rows="1"
@@ -654,10 +661,15 @@ async function deleteSession(id) {
 
 // ====== Chat ======
 function renderChatSidebar() {
-  // 更新导航栏的会话计数
-  const count = Object.keys(state.sessions).length;
-  const badge = document.querySelector('.nav-item:nth-child(3) .badge');
-  if (badge) badge.textContent = count;
+  // 更新会话下拉框
+  const sel = document.getElementById('chatSessionSelect');
+  if (sel) {
+    const cur = sel.value;
+    sel.innerHTML = '<option value="">— 选择会话 —</option>' +
+      Object.entries(state.sessions).map(([id, s]) =>
+        `<option value="${id}" ${id === state.currentSessionId ? 'selected' : ''}>${s.name}</option>`
+      ).join('');
+  }
 }
 
 function renderChatPage() {
